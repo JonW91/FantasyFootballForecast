@@ -19,7 +19,7 @@ This document is the working tracker for project planning, delivery status, and 
 | --- | --- | --- |
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
-| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, and empty states in the shell. |
+| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, and empty states in the shell. Template scaffold pages have been removed. |
 | Historical data depth | Next | Expand fixture and player match-history ingestion beyond the current baseline. |
 | Model maturity | Next | Add richer features, calibration, and additional baseline models once more historical data is available. |
 
@@ -32,6 +32,7 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Added an in-app progress page, removed template shell items, and surfaced recent run status on the dashboard | Tightened the prototype toward the fantasy football workflow and made operational state visible from the app shell. |
 | 2026-04-10 | Improved teams and players browse pages with counts and empty states | Made the main data-browse views easier to use as a prototype. |
 | 2026-04-10 | Added counts and empty states to fixtures, availability, news, picks, and model pages | Rounded out the main browse surfaces with clearer prototype feedback. |
+| 2026-04-10 | Removed scaffold counter and weather pages | Cleared unused template routes from the web project shell. |
 
 ## Near-Term Plan
 
