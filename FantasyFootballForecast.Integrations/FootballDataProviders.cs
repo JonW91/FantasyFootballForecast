@@ -307,8 +307,71 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
     public override Task<IReadOnlyList<ProviderAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ProviderAvailabilityDto>>([]);
 
-    public override Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<ProviderPlayerMatchStatDto>>([]);
+    public override async Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
+    {
+        var playerResults = await GetCachedJsonAsync<TheSportsDbPlayerResultsResponse>(
+            $"thesportsdb.playerresults.{playerExternalId}",
+            $"playerresults.php?id={playerExternalId}",
+            TimeSpan.FromHours(6),
+            cancellationToken);
+
+        if (playerResults.Results.Count == 0)
+        {
+            return [];
+        }
+
+        var teams = await GetTeamsAsync(cancellationToken);
+        var teamStrengths = teams.ToDictionary(team => team.ExternalId, team => team.StrengthRating);
+
+        var rows = new List<ProviderPlayerMatchStatDto>(playerResults.Results.Count);
+        foreach (var result in playerResults.Results)
+        {
+            var eventDetails = await GetCachedJsonAsync<TheSportsDbEventResponse>(
+                $"thesportsdb.event.{result.IdEvent}",
+                $"lookupevent.php?id={result.IdEvent}",
+                TimeSpan.FromHours(12),
+                cancellationToken);
+
+            var match = eventDetails.Events.FirstOrDefault();
+            if (match is null)
+            {
+                continue;
+            }
+
+            var playerTeamId = ParseInt(result.IdTeam);
+            var homeTeamId = ParseNullableInt(match.IdHomeTeam);
+            var awayTeamId = ParseNullableInt(match.IdAwayTeam);
+            var isHome = homeTeamId == playerTeamId;
+            var opponentTeamId = isHome ? awayTeamId : homeTeamId;
+            if (opponentTeamId is null)
+            {
+                continue;
+            }
+
+            rows.Add(new ProviderPlayerMatchStatDto(
+                PlayerExternalId: ParseInt(result.IdPlayer),
+                OpponentTeamExternalId: opponentTeamId.Value,
+                FixtureExternalId: ParseInt(result.IdEvent),
+                GameweekNumber: ParseNullableInt(match.IntRound) ?? 0,
+                KickoffUtc: ParseKickoffUtc(match.DateEvent, match.StrTime, match.StrTimestamp),
+                IsHome: isHome,
+                MinutesPlayed: 0,
+                Goals: 0,
+                Assists: 0,
+                CleanSheets: 0,
+                Saves: 0,
+                BonusPoints: 0,
+                GoalsConceded: 0,
+                YellowCards: 0,
+                RedCards: 0,
+                FantasyPoints: ParseDecimal(result.IntPoints),
+                OpponentStrength: teamStrengths.TryGetValue(opponentTeamId.Value, out var strength) ? strength : 50m,
+                RollingForm: ParseDecimal(result.IntPoints),
+                PriceAtKickoff: 0m));
+        }
+
+        return rows;
+    }
 
     private static AvailabilityStatus MapAvailability(string? status) => status?.ToLowerInvariant() switch
     {
@@ -340,6 +403,9 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
 
         return DateTime.UtcNow;
     }
+
+    private static decimal ParseDecimal(string? value, decimal defaultValue = 0m)
+        => decimal.TryParse(value, out var parsed) ? parsed : defaultValue;
 }
 
 public sealed class ApiFootballDataProvider : FootballDataProviderBase
@@ -456,6 +522,12 @@ file sealed record TheSportsDbPlayersResponse(
 file sealed record TheSportsDbEventsResponse(
     [property: System.Text.Json.Serialization.JsonPropertyName("events")] List<TheSportsDbEvent> Events);
 
+file sealed record TheSportsDbEventResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("events")] List<TheSportsDbEvent> Events);
+
+file sealed record TheSportsDbPlayerResultsResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("results")] List<TheSportsDbPlayerResult> Results);
+
 file sealed record TheSportsDbTeam(
     [property: System.Text.Json.Serialization.JsonPropertyName("idTeam")] string IdTeam,
     [property: System.Text.Json.Serialization.JsonPropertyName("strTeam")] string StrTeam,
@@ -486,3 +558,19 @@ file sealed record TheSportsDbEvent(
     [property: System.Text.Json.Serialization.JsonPropertyName("strStatus")] string? StrStatus,
     [property: System.Text.Json.Serialization.JsonPropertyName("idHomeTeam")] string IdHomeTeam,
     [property: System.Text.Json.Serialization.JsonPropertyName("idAwayTeam")] string IdAwayTeam);
+
+file sealed record TheSportsDbPlayerResult(
+    [property: System.Text.Json.Serialization.JsonPropertyName("idResult")] string IdResult,
+    [property: System.Text.Json.Serialization.JsonPropertyName("idPlayer")] string IdPlayer,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strPlayer")] string StrPlayer,
+    [property: System.Text.Json.Serialization.JsonPropertyName("idTeam")] string IdTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("idEvent")] string IdEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strEvent")] string StrEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strResult")] string? StrResult,
+    [property: System.Text.Json.Serialization.JsonPropertyName("intPosition")] string? IntPosition,
+    [property: System.Text.Json.Serialization.JsonPropertyName("intPoints")] string? IntPoints,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strDetail")] string? StrDetail,
+    [property: System.Text.Json.Serialization.JsonPropertyName("dateEvent")] string? DateEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strSeason")] string? StrSeason,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strCountry")] string? StrCountry,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strSport")] string? StrSport);

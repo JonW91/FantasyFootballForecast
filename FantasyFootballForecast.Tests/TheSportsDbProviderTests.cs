@@ -45,6 +45,19 @@ public sealed class TheSportsDbProviderTests
         Assert.That(fixtures[0].IsFinished, Is.True);
     }
 
+    [Test]
+    public async Task GetPlayerMatchStatsAsync_ParsesPlayerResults()
+    {
+        var provider = CreateProvider();
+
+        var stats = await provider.GetPlayerMatchStatsAsync(12345);
+
+        Assert.That(stats, Has.Count.EqualTo(1));
+        Assert.That(stats[0].FixtureExternalId, Is.EqualTo(2267381));
+        Assert.That(stats[0].OpponentTeamExternalId, Is.EqualTo(133720));
+        Assert.That(stats[0].FantasyPoints, Is.EqualTo(6));
+    }
+
     private static TheSportsDbFootballDataProvider CreateProvider()
     {
         var handler = new StubHandler();
@@ -75,6 +88,10 @@ public sealed class TheSportsDbProviderTests
                 ? TeamsJson
                 : path.Contains("lookup_all_players", StringComparison.OrdinalIgnoreCase)
                     ? PlayersJson
+                    : path.Contains("playerresults", StringComparison.OrdinalIgnoreCase)
+                        ? PlayerResultsJson
+                        : path.Contains("lookupevent", StringComparison.OrdinalIgnoreCase)
+                            ? EventJson
                     : FixturesJson;
 
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
@@ -130,6 +147,53 @@ public sealed class TheSportsDbProviderTests
           "strVenue": "Tottenham Hotspur Stadium",
           "strStatus": "Match Finished",
           "idHomeTeam": "133616",
+          "idAwayTeam": "133720"
+        }
+      ]
+    }
+    """;
+
+    private const string PlayerResultsJson = """
+    {
+      "results": [
+        {
+          "idResult": "9001",
+          "idPlayer": "12345",
+          "strPlayer": "Bukayo Saka",
+          "idTeam": "133604",
+          "idEvent": "2267381",
+          "strEvent": "Tottenham Hotspur vs Nottingham Forest",
+          "strResult": "W",
+          "intPosition": "1",
+          "intPoints": "6",
+          "strDetail": "Scored",
+          "dateEvent": "2026-03-22",
+          "strSeason": "2025-2026",
+          "strCountry": "England",
+          "strSport": "Soccer"
+        }
+      ]
+    }
+    """;
+
+    private const string EventJson = """
+    {
+      "events": [
+        {
+          "idEvent": "2267381",
+          "strTimestamp": "2026-03-22T14:15:00",
+          "dateEvent": "2026-03-22",
+          "strTime": "14:15:00",
+          "strEvent": "Arsenal vs Nottingham Forest",
+          "strHomeTeam": "Arsenal",
+          "strAwayTeam": "Nottingham Forest",
+          "intHomeScore": "2",
+          "intAwayScore": "1",
+          "intRound": "31",
+          "strSeason": "2025-2026",
+          "strVenue": "Emirates Stadium",
+          "strStatus": "Match Finished",
+          "idHomeTeam": "133604",
           "idAwayTeam": "133720"
         }
       ]
