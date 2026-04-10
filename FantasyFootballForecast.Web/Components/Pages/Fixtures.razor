@@ -1,0 +1,39 @@
+@page "/fixtures"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+@using System.Globalization
+
+<PageTitle>Fixtures</PageTitle>
+
+<h2>Fixtures</h2>
+
+<div class="panel">
+    @if (fixtures is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        @foreach (var fixture in fixtures)
+        {
+            <div class="fixture-card">
+                <div>
+                    <strong>@fixture.HomeTeamName</strong>
+                    <span>vs</span>
+                    <strong>@fixture.AwayTeamName</strong>
+                </div>
+                <div>
+                    <span>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</span>
+                    <span class="badge @(fixture.IsFinished ? "badge-good" : "badge-neutral")">@(fixture.IsFinished ? "Final" : "Upcoming")</span>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<FixtureDto>? fixtures;
+
+    protected override async Task OnInitializedAsync()
+        => fixtures = await Api.GetFixturesAsync(true) ?? [];
+}

@@ -1,0 +1,47 @@
+@page "/news"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>News</PageTitle>
+
+<h2>News / Availability Feed</h2>
+
+<div class="panel">
+    @if (items is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        @foreach (var item in items)
+        {
+            <article class="news-card">
+                <div class="news-meta">
+                    <span>@item.SourceName</span>
+                    <span>@item.PublishedUtc.ToString("dd MMM HH:mm")</span>
+                </div>
+                <h3>@item.Title</h3>
+                <p>@item.Summary</p>
+                <div class="news-badges">
+                    @if (item.InjuryFlag)
+                    {
+                        <span class="badge badge-warning">Injury</span>
+                    }
+                    @if (item.SuspensionFlag)
+                    {
+                        <span class="badge badge-bad">Suspension</span>
+                    }
+                    @if (item.AvailableFlag)
+                    {
+                        <span class="badge badge-good">Available</span>
+                    }
+                </div>
+            </article>
+        }
+    }
+</div>
+
+@code {
+    private List<NewsItemDto>? items;
+    protected override async Task OnInitializedAsync() => items = await Api.GetNewsAsync() ?? [];
+}

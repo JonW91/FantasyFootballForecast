@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FantasyFootballForecast.Application\FantasyFootballForecast.Application.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.Domain\FantasyFootballForecast.Domain.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.Infrastructure\FantasyFootballForecast.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.ML" Version="4.0.1" />
+  </ItemGroup>
+
+</Project>

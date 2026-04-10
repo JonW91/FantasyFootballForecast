@@ -1,0 +1,36 @@
+@page "/availability"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Availability</PageTitle>
+
+<h2>Injury / Suspension Tracker</h2>
+
+<div class="panel">
+    @if (items is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        @foreach (var item in items)
+        {
+            <div class="list-row">
+                <span>@item.PlayerName - @item.TeamName</span>
+                <strong class="badge @BadgeClass(item.AvailabilityStatus)">@item.AvailabilityStatus</strong>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<AvailabilityDto>? items;
+    protected override async Task OnInitializedAsync() => items = await Api.GetAvailabilityAsync() ?? [];
+    private static string BadgeClass(AvailabilityStatus status) => status switch
+    {
+        AvailabilityStatus.Available => "badge-good",
+        AvailabilityStatus.Doubtful => "badge-warning",
+        AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.Suspended => "badge-bad",
+        _ => "badge-neutral"
+    };
+}

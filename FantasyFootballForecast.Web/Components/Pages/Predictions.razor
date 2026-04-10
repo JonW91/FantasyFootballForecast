@@ -1,0 +1,42 @@
+@page "/predictions"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Predictions</PageTitle>
+
+<h2>Predictions</h2>
+
+<div class="grid-2">
+    <article class="panel">
+        <h3>Match predictions</h3>
+        @if (predictions is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            @foreach (var prediction in predictions)
+            {
+                <div class="list-row">
+                    <span>@prediction.PredictionKind</span>
+                    <strong>@prediction.PredictedValue</strong>
+                </div>
+            }
+        }
+    </article>
+    <article class="panel">
+        <h3>Projection notes</h3>
+        <ul>
+            <li>Model outputs are stored in SQL Server.</li>
+            <li>Future iterations can separate match, player, and table projections.</li>
+            <li>The API currently exposes the persisted prediction table directly.</li>
+        </ul>
+    </article>
+</div>
+
+@code {
+    private List<PredictionDto>? predictions;
+
+    protected override async Task OnInitializedAsync()
+        => predictions = await Api.GetPredictionsAsync() ?? [];
+}

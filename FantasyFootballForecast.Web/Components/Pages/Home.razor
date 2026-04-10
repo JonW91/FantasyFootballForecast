@@ -1,0 +1,114 @@
+@page "/"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+@using System.Globalization
+
+<PageTitle>Dashboard</PageTitle>
+
+<section class="hero">
+    <div>
+        <p class="eyebrow">Dashboard</p>
+        <h2>Forecast the next gameweek with live FPL data, news, and ML-driven picks.</h2>
+        <p class="hero-copy">Starter solution for EPL analytics, injury awareness, model training, and fantasy recommendations.</p>
+    </div>
+    <div class="hero-stats">
+        <div><span>@teamCount</span><label>Teams</label></div>
+        <div><span>@playerCount</span><label>Players</label></div>
+        <div><span>@fixtureCount</span><label>Fixtures</label></div>
+    </div>
+</section>
+
+<div class="grid-3">
+    <article class="panel">
+        <h3>Upcoming fixtures</h3>
+        @if (fixtures is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            foreach (var fixture in fixtures.Take(3))
+            {
+                <div class="list-row">
+                    <span>@fixture.HomeTeamName vs @fixture.AwayTeamName</span>
+                    <strong>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</strong>
+                </div>
+            }
+        }
+    </article>
+
+    <article class="panel">
+        <h3>Top picks</h3>
+        @if (topPicks is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            foreach (var pick in topPicks.Take(3))
+            {
+                <div class="list-row">
+                    <span>@pick.PlayerName</span>
+                    <strong>@pick.PredictedPoints.ToString("F1") pts</strong>
+                </div>
+            }
+        }
+    </article>
+
+    <article class="panel">
+        <h3>Availability highlights</h3>
+        @if (availability is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            foreach (var item in availability.Take(3))
+            {
+                <div class="list-row">
+                    <span>@item.PlayerName</span>
+                    <strong class="badge @BadgeClass(item.AvailabilityStatus)">@item.AvailabilityStatus</strong>
+                </div>
+            }
+        }
+    </article>
+</div>
+
+@code {
+    private List<TeamDto>? teams;
+    private List<PlayerDto>? players;
+    private List<FixtureDto>? fixtures;
+    private List<FantasyPickDto>? topPicks;
+    private List<AvailabilityDto>? availability;
+
+    private int teamCount;
+    private int playerCount;
+    private int fixtureCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var teamsTask = Api.GetTeamsAsync();
+        var playersTask = Api.GetPlayersAsync();
+        var fixturesTask = Api.GetFixturesAsync(true);
+        var picksTask = Api.GetTopPicksAsync(5);
+        var availabilityTask = Api.GetAvailabilityAsync();
+
+        teams = await teamsTask ?? [];
+        players = await playersTask ?? [];
+        fixtures = await fixturesTask ?? [];
+        topPicks = await picksTask ?? [];
+        availability = await availabilityTask ?? [];
+
+        teamCount = teams.Count;
+        playerCount = players.Count;
+        fixtureCount = fixtures.Count;
+    }
+
+    private static string BadgeClass(AvailabilityStatus status) => status switch
+    {
+        AvailabilityStatus.Available => "badge-good",
+        AvailabilityStatus.Doubtful => "badge-warning",
+        AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.Suspended => "badge-bad",
+        _ => "badge-neutral"
+    };
+}

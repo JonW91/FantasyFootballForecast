@@ -1,0 +1,62 @@
+@page "/picks"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Top Picks</PageTitle>
+
+<h2>Top Fantasy Picks</h2>
+
+<div class="grid-2">
+    <article class="panel">
+        <h3>Best picks</h3>
+        @if (picks is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            @foreach (var pick in picks)
+            {
+                <div class="pick-card">
+                    <div>
+                        <strong>@pick.PlayerName</strong>
+                        <p>@pick.TeamName - @pick.Position</p>
+                    </div>
+                    <div>
+                        <span>@pick.PredictedPoints.ToString("F1") pts</span>
+                        <span class="badge @(pick.IsSuspended || pick.IsInjuryConcern ? "badge-warning" : "badge-good")">@pick.RecommendationReason</span>
+                    </div>
+                </div>
+            }
+        }
+    </article>
+
+    <article class="panel">
+        <h3>Best XI prototype</h3>
+        @if (bestXi is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            @foreach (var pick in bestXi.Take(11))
+            {
+                <div class="list-row">
+                    <span>@pick.PlayerName</span>
+                    <strong>@pick.PredictedPoints.ToString("F1")</strong>
+                </div>
+            }
+        }
+    </article>
+</div>
+
+@code {
+    private List<FantasyPickDto>? picks;
+    private List<FantasyPickDto>? bestXi;
+
+    protected override async Task OnInitializedAsync()
+    {
+        picks = await Api.GetTopPicksAsync(10) ?? [];
+        bestXi = await Api.GetBestXiAsync() ?? [];
+    }
+}

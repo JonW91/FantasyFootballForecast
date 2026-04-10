@@ -1,0 +1,55 @@
+@page "/models"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Model Status</PageTitle>
+
+<h2>Model Status / Training Runs</h2>
+
+<div class="grid-2">
+    <article class="panel">
+        <h3>Training runs</h3>
+        @if (modelRuns is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            @foreach (var run in modelRuns)
+            {
+                <div class="list-row">
+                    <span>@run.ModelName</span>
+                    <strong>@run.Status - @run.EvaluationMetricName @run.EvaluationMetricValue</strong>
+                </div>
+            }
+        }
+    </article>
+    <article class="panel">
+        <h3>Data ingestion runs</h3>
+        @if (ingestionRuns is null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            @foreach (var run in ingestionRuns)
+            {
+                <div class="list-row">
+                    <span>@run.SourceName</span>
+                    <strong>@run.Status - @run.ItemsProcessed processed</strong>
+                </div>
+            }
+        }
+    </article>
+</div>
+
+@code {
+    private List<ModelTrainingRunDto>? modelRuns;
+    private List<DataIngestionRunDto>? ingestionRuns;
+
+    protected override async Task OnInitializedAsync()
+    {
+        modelRuns = await Api.GetModelRunsAsync() ?? [];
+        ingestionRuns = await Api.GetIngestionRunsAsync() ?? [];
+    }
+}

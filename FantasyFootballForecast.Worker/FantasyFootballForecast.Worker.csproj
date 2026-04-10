@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FantasyFootballForecast.Application\FantasyFootballForecast.Application.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.Infrastructure\FantasyFootballForecast.Infrastructure.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.Integrations\FantasyFootballForecast.Integrations.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.ML\FantasyFootballForecast.ML.csproj" />
+    <ProjectReference Include="..\FantasyFootballForecast.ServiceDefaults\FantasyFootballForecast.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

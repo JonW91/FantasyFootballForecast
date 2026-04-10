@@ -1,0 +1,70 @@
+@page "/admin"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Data Sync</PageTitle>
+
+<h2>Data Sync Admin</h2>
+
+<div class="panel">
+    <div class="button-row">
+        <button class="btn btn-primary" @onclick="SyncAll">Sync all providers</button>
+        <button class="btn btn-outline-light" @onclick="SyncFpl">Sync FPL</button>
+        <button class="btn btn-outline-light" @onclick="SyncTheSportsDb">Sync TheSportsDB</button>
+        <button class="btn btn-outline-light" @onclick="SyncApiFootball">Sync API-Football</button>
+        <button class="btn btn-outline-light" @onclick="RetrainAll">Retrain both models</button>
+        <button class="btn btn-outline-light" @onclick="TrainPlayers">Train player model</button>
+        <button class="btn btn-outline-light" @onclick="TrainTeams">Train team model</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <p class="mt-3">@message</p>
+    }
+</div>
+
+@code {
+    private string? message;
+
+    private async Task SyncAll()
+    {
+        var run = await Api.SyncAsync();
+        message = $"Sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
+    }
+
+    private async Task SyncFpl()
+    {
+        var run = await Api.SyncAsync("FPL Public API");
+        message = $"FPL sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
+    }
+
+    private async Task SyncTheSportsDb()
+    {
+        var run = await Api.SyncAsync("TheSportsDB");
+        message = $"TheSportsDB sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
+    }
+
+    private async Task SyncApiFootball()
+    {
+        var run = await Api.SyncAsync("API-Football");
+        message = $"API-Football sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
+    }
+
+    private async Task RetrainAll()
+    {
+        var summary = await Api.RetrainAsync();
+        message = $"Retrain completed: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
+    }
+
+    private async Task TrainPlayers()
+    {
+        var summary = await Api.TrainAsync();
+        message = $"Player model: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
+    }
+
+    private async Task TrainTeams()
+    {
+        var summary = await Api.TrainAsync("team");
+        message = $"Team model: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
+    }
+}

@@ -1,0 +1,54 @@
+@page "/teams"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Teams</PageTitle>
+
+<h2>Teams</h2>
+
+<div class="panel">
+    <input class="form-control mb-3" placeholder="Search teams" @bind="search" @bind:event="oninput" />
+
+    @if (teams is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table table-dark table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Strength</th>
+                        <th>xG For</th>
+                        <th>xG Against</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var team in FilteredTeams)
+                    {
+                        <tr>
+                            <td><a href="@($"teams/{team.Id}")">@team.Name</a></td>
+                            <td>@team.StrengthRating</td>
+                            <td>@team.ExpectedGoalsForPerMatch</td>
+                            <td>@team.ExpectedGoalsAgainstPerMatch</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<TeamDto>? teams;
+    private string search = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+        => teams = await Api.GetTeamsAsync() ?? [];
+
+    private IEnumerable<TeamDto> FilteredTeams => (teams ?? [])
+        .Where(team => string.IsNullOrWhiteSpace(search) || team.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || team.ShortName.Contains(search, StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(team => team.StrengthRating);
+}

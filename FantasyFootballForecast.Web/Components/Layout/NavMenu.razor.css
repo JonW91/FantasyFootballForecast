@@ -1,0 +1,85 @@
+.navbar-toggler {
+    appearance: none;
+    cursor: pointer;
+    width: 3.25rem;
+    height: 2.5rem;
+    color: white;
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+}
+
+.navbar-toggler:checked {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.top-row {
+    min-height: 3.75rem;
+    background: transparent;
+}
+
+.navbar-brand {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+}
+
+.nav-item {
+    font-size: 0.95rem;
+    padding: 0.2rem 0.75rem 0.2rem 0.9rem;
+}
+
+.nav-item:first-of-type {
+    padding-top: 0.8rem;
+}
+
+.nav-item:last-of-type {
+    padding-bottom: 0.8rem;
+}
+
+.nav-item ::deep .nav-link {
+    color: #d7e3f4;
+    background: none;
+    border: none;
+    border-radius: 0.9rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    line-height: 3rem;
+    width: 100%;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-item ::deep a.active {
+    background-color: rgba(111, 168, 255, 0.18);
+    color: white;
+}
+
+.nav-item ::deep .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: white;
+}
+
+.nav-scrollable {
+    display: none;
+}
+
+.navbar-toggler:checked ~ .nav-scrollable {
+    display: block;
+}
+
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .nav-scrollable {
+        display: block;
+        height: calc(100vh - 3.75rem);
+        overflow-y: auto;
+    }
+}

@@ -1,0 +1,13 @@
+.vs/
+bin/
+obj/
+
+App_Data/
+
+*.user
+*.suo
+*.userosscache
+*.rsuser
+
+.DS_Store
+Thumbs.db

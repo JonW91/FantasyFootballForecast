@@ -1,0 +1,58 @@
+@page "/teams/{TeamId:int}"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+@using System.Globalization
+
+<PageTitle>Team Details</PageTitle>
+
+@if (team is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h2>@team.Name</h2>
+    <div class="grid-3">
+        <article class="panel"><strong>Strength</strong><p>@team.StrengthRating</p></article>
+        <article class="panel"><strong>xG For</strong><p>@team.ExpectedGoalsForPerMatch</p></article>
+        <article class="panel"><strong>xG Against</strong><p>@team.ExpectedGoalsAgainstPerMatch</p></article>
+    </div>
+
+    <div class="panel">
+        <h3>Players</h3>
+        @foreach (var player in players.Where(player => player.TeamId == TeamId))
+        {
+            <div class="list-row">
+                <a href="@($"players/{player.Id}")">@player.Name</a>
+                <strong>@player.Position</strong>
+            </div>
+        }
+    </div>
+
+    <div class="panel mt-3">
+        <h3>Upcoming fixtures</h3>
+        @foreach (var fixture in fixtures.Where(fixture => fixture.HomeTeamId == TeamId || fixture.AwayTeamId == TeamId).Take(5))
+        {
+            <div class="list-row">
+                <span>@fixture.HomeTeamName vs @fixture.AwayTeamName</span>
+                <strong>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</strong>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int TeamId { get; set; }
+
+    private TeamDto? team;
+    private List<PlayerDto> players = [];
+    private List<FixtureDto> fixtures = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var teams = await Api.GetTeamsAsync() ?? [];
+        team = teams.FirstOrDefault(team => team.Id == TeamId);
+        players = await Api.GetPlayersAsync(teamId: TeamId) ?? [];
+        fixtures = await Api.GetFixturesAsync(true) ?? [];
+    }
+}

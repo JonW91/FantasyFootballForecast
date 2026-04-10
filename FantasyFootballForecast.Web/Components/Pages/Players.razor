@@ -1,0 +1,96 @@
+@page "/players"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Players</PageTitle>
+
+<h2>Players</h2>
+
+<div class="panel">
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input class="form-control" placeholder="Search players" @bind="search" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortMode">
+                <option value="form">Recent form</option>
+                <option value="points">Recent points</option>
+                <option value="price">Price</option>
+            </select>
+        </div>
+    </div>
+
+    @if (players is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table table-dark table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>Pos</th>
+                        <th>Form</th>
+                        <th>Points</th>
+                        <th>Price</th>
+                        <th>Availability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var player in FilteredPlayers)
+                    {
+                        <tr>
+                            <td><a href="@($"players/{player.Id}")">@player.Name</a></td>
+                            <td>@player.TeamName</td>
+                            <td>@player.Position</td>
+                            <td>@player.Form</td>
+                            <td>@player.RecentPoints</td>
+                            <td>@player.Price</td>
+                            <td><span class="badge @BadgeClass(player.AvailabilityStatus)">@player.AvailabilityStatus</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PlayerDto>? players;
+    private string search = string.Empty;
+    private string sortMode = "form";
+
+    protected override async Task OnInitializedAsync()
+        => players = await Api.GetPlayersAsync() ?? [];
+
+    private IEnumerable<PlayerDto> FilteredPlayers
+    {
+        get
+        {
+            IEnumerable<PlayerDto> query = players ?? [];
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(player => player.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || player.TeamName.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return sortMode switch
+            {
+                "price" => query.OrderByDescending(player => player.Price),
+                "points" => query.OrderByDescending(player => player.RecentPoints),
+                _ => query.OrderByDescending(player => player.Form)
+            };
+        }
+    }
+
+    private static string BadgeClass(AvailabilityStatus status) => status switch
+    {
+        AvailabilityStatus.Available => "badge-good",
+        AvailabilityStatus.Doubtful => "badge-warning",
+        AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.Suspended => "badge-bad",
+        _ => "badge-neutral"
+    };
+}

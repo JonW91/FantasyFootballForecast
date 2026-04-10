@@ -1,0 +1,38 @@
+@page "/players/{PlayerId:int}"
+@rendermode InteractiveServer
+@inject FootballApiClient Api
+
+<PageTitle>Player Details</PageTitle>
+
+@if (player is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h2>@player.Name</h2>
+    <div class="grid-3">
+        <article class="panel"><strong>Team</strong><p>@player.TeamName</p></article>
+        <article class="panel"><strong>Price</strong><p>@player.Price</p></article>
+        <article class="panel"><strong>Availability</strong><p>@player.AvailabilityStatus</p></article>
+    </div>
+    <div class="panel mt-3">
+        <h3>Form snapshot</h3>
+        <p>Recent points: @player.RecentPoints</p>
+        <p>Goals: @player.Goals</p>
+        <p>Assists: @player.Assists</p>
+        <p>Chance of playing next round: @player.ChanceOfPlayingNextRound</p>
+        <p>Expected return: @player.ExpectedReturnText</p>
+    </div>
+}
+
+@code {
+    [Parameter] public int PlayerId { get; set; }
+    private PlayerDto? player;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var players = await Api.GetPlayersAsync() ?? [];
+        player = players.FirstOrDefault(player => player.Id == PlayerId);
+    }
+}

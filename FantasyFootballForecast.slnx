@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="FantasyFootballForecast.Api/FantasyFootballForecast.Api.csproj" />
+  <Project Path="FantasyFootballForecast.AppHost/FantasyFootballForecast.AppHost.csproj" />
+  <Project Path="FantasyFootballForecast.Application/FantasyFootballForecast.Application.csproj" />
+  <Project Path="FantasyFootballForecast.Domain/FantasyFootballForecast.Domain.csproj" />
+  <Project Path="FantasyFootballForecast.Infrastructure/FantasyFootballForecast.Infrastructure.csproj" />
+  <Project Path="FantasyFootballForecast.Integrations/FantasyFootballForecast.Integrations.csproj" />
+  <Project Path="FantasyFootballForecast.IntegrationTests/FantasyFootballForecast.IntegrationTests.csproj" />
+  <Project Path="FantasyFootballForecast.ML/FantasyFootballForecast.ML.csproj" />
+  <Project Path="FantasyFootballForecast.ServiceDefaults/FantasyFootballForecast.ServiceDefaults.csproj" />
+  <Project Path="FantasyFootballForecast.Tests/FantasyFootballForecast.Tests.csproj" />
+  <Project Path="FantasyFootballForecast.Web/FantasyFootballForecast.Web.csproj" />
+  <Project Path="FantasyFootballForecast.Worker/FantasyFootballForecast.Worker.csproj" />
+</Solution>
