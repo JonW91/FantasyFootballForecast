@@ -216,6 +216,8 @@ public sealed class FplPublicFootballDataProvider : FootballDataProviderBase
 
 public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
 {
+    private const int PremierLeagueId = 4328;
+
     public TheSportsDbFootballDataProvider(IHttpClientFactory httpClientFactory, IMemoryCache cache, ILogger<TheSportsDbFootballDataProvider> logger)
         : base(httpClientFactory.CreateClient("thesportsdb"), cache, logger)
     {
@@ -223,14 +225,81 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
 
     public override string Name => "TheSportsDB";
 
-    public override Task<IReadOnlyList<ProviderTeamDto>> GetTeamsAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<ProviderTeamDto>>([]);
+    public override async Task<IReadOnlyList<ProviderTeamDto>> GetTeamsAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetCachedJsonAsync<TheSportsDbTeamsResponse>("thesportsdb.teams.premierleague", $"search_all_teams.php?l=English_Premier_League", TimeSpan.FromHours(12), cancellationToken);
+        return response.Teams
+            .Select(team => new ProviderTeamDto(
+                ExternalId: ParseInt(team.IdTeam),
+                Name: team.StrTeam,
+                ShortName: string.IsNullOrWhiteSpace(team.StrTeamShort) ? team.StrTeam[..Math.Min(team.StrTeam.Length, 3)].ToUpperInvariant() : team.StrTeamShort,
+                Code: ParseInt(team.IdTeam).ToString(),
+                CrestUrl: team.StrTeamBadge,
+                StrengthRating: 50m,
+                ExpectedGoalsForPerMatch: 1.5m,
+                ExpectedGoalsAgainstPerMatch: 1.2m))
+            .ToList();
+    }
 
-    public override Task<IReadOnlyList<ProviderPlayerDto>> GetPlayersAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<ProviderPlayerDto>>([]);
+    public override async Task<IReadOnlyList<ProviderPlayerDto>> GetPlayersAsync(CancellationToken cancellationToken = default)
+    {
+        var teams = await GetTeamsAsync(cancellationToken);
+        var rosterTasks = teams.Select(async team =>
+        {
+            var roster = await GetCachedJsonAsync<TheSportsDbPlayersResponse>($"thesportsdb.players.{team.ExternalId}", $"lookup_all_players.php?id={team.ExternalId}", TimeSpan.FromHours(12), cancellationToken);
+            return roster.Players.Select(player => new ProviderPlayerDto(
+                ExternalId: ParseInt(player.IdPlayer),
+                ExternalTeamId: team.ExternalId,
+                Name: player.StrPlayer,
+                FirstName: null,
+                LastName: player.StrLastName,
+                Position: player.StrPosition ?? player.StrStatus ?? "Unknown",
+                ShirtNumber: ParseInt(player.StrNumber, defaultValue: 0),
+                Price: 0m,
+                OwnershipPercent: 0m,
+                Form: 0m,
+                MinutesPlayed: 0m,
+                RecentPoints: 0m,
+                Goals: 0m,
+                Assists: 0m,
+                CleanSheets: 0m,
+                YellowCards: 0m,
+                RedCards: 0m,
+                AvailabilityStatus: MapAvailability(player.StrStatus),
+                ChanceOfPlayingNextRound: player.StrStatus == "Active" ? 1m : 0m,
+                ExpectedReturnText: player.StrStatus))
+            .ToList();
+        });
 
-    public override Task<IReadOnlyList<ProviderFixtureDto>> GetFixturesAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<ProviderFixtureDto>>([]);
+        var rows = await Task.WhenAll(rosterTasks);
+        return rows.SelectMany(row => row).ToList();
+    }
+
+    public override async Task<IReadOnlyList<ProviderFixtureDto>> GetFixturesAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetCachedJsonAsync<TheSportsDbEventsResponse>(
+            "thesportsdb.fixtures.past.premierleague",
+            $"eventspastleague.php?id={PremierLeagueId}",
+            TimeSpan.FromHours(6),
+            cancellationToken);
+
+        return response.Events
+            .Select(fixture => new ProviderFixtureDto(
+                ExternalId: ParseInt(fixture.IdEvent),
+                SeasonExternalId: fixture.StrSeason?.GetHashCode(StringComparison.Ordinal) ?? 0,
+                GameweekNumber: ParseInt(fixture.IntRound, defaultValue: 0),
+                HomeTeamExternalId: ParseInt(fixture.IdHomeTeam),
+                AwayTeamExternalId: ParseInt(fixture.IdAwayTeam),
+                KickoffUtc: ParseKickoffUtc(fixture.DateEvent, fixture.StrTime, fixture.StrTimestamp),
+                HomeScore: ParseNullableInt(fixture.IntHomeScore),
+                AwayScore: ParseNullableInt(fixture.IntAwayScore),
+                Venue: fixture.StrVenue,
+                IsFinished: string.Equals(fixture.StrStatus, "Match Finished", StringComparison.OrdinalIgnoreCase),
+                IsBlanked: false,
+                IsDoubleGameweek: false,
+                Status: fixture.StrStatus))
+            .ToList();
+    }
 
     public override Task<IReadOnlyList<ProviderNewsDto>> GetNewsAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ProviderNewsDto>>([]);
@@ -240,6 +309,37 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
 
     public override Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ProviderPlayerMatchStatDto>>([]);
+
+    private static AvailabilityStatus MapAvailability(string? status) => status?.ToLowerInvariant() switch
+    {
+        "active" => AvailabilityStatus.Available,
+        "injured" => AvailabilityStatus.Injured,
+        "suspended" => AvailabilityStatus.Suspended,
+        "out of squad" => AvailabilityStatus.RuledOut,
+        _ => AvailabilityStatus.Unknown
+    };
+
+    private static int ParseInt(string? value, int defaultValue = 0)
+        => int.TryParse(value, out var parsed) ? parsed : defaultValue;
+
+    private static int? ParseNullableInt(string? value)
+        => int.TryParse(value, out var parsed) ? parsed : null;
+
+    private static DateTime ParseKickoffUtc(string? dateEvent, string? time, string? timestamp)
+    {
+        if (!string.IsNullOrWhiteSpace(timestamp) && DateTime.TryParse(timestamp, out var parsedTimestamp))
+        {
+            return DateTime.SpecifyKind(parsedTimestamp, DateTimeKind.Utc);
+        }
+
+        var combined = string.Join(" ", new[] { dateEvent, time }.Where(item => !string.IsNullOrWhiteSpace(item)));
+        if (DateTime.TryParse(combined, out var parsedCombined))
+        {
+            return DateTime.SpecifyKind(parsedCombined, DateTimeKind.Utc);
+        }
+
+        return DateTime.UtcNow;
+    }
 }
 
 public sealed class ApiFootballDataProvider : FootballDataProviderBase
@@ -346,3 +446,43 @@ file sealed record FplPlayerHistory(
     [property: System.Text.Json.Serialization.JsonPropertyName("red_cards")] int RedCards,
     [property: System.Text.Json.Serialization.JsonPropertyName("total_points")] decimal TotalPoints,
     [property: System.Text.Json.Serialization.JsonPropertyName("value")] decimal Value);
+
+file sealed record TheSportsDbTeamsResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("teams")] List<TheSportsDbTeam> Teams);
+
+file sealed record TheSportsDbPlayersResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("player")] List<TheSportsDbPlayer> Players);
+
+file sealed record TheSportsDbEventsResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("events")] List<TheSportsDbEvent> Events);
+
+file sealed record TheSportsDbTeam(
+    [property: System.Text.Json.Serialization.JsonPropertyName("idTeam")] string IdTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strTeam")] string StrTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strTeamShort")] string? StrTeamShort,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strTeamBadge")] string? StrTeamBadge);
+
+file sealed record TheSportsDbPlayer(
+    [property: System.Text.Json.Serialization.JsonPropertyName("idPlayer")] string IdPlayer,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strPlayer")] string StrPlayer,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strLastName")] string? StrLastName,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strNumber")] string? StrNumber,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strPosition")] string? StrPosition,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strStatus")] string? StrStatus);
+
+file sealed record TheSportsDbEvent(
+    [property: System.Text.Json.Serialization.JsonPropertyName("idEvent")] string IdEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strTimestamp")] string? StrTimestamp,
+    [property: System.Text.Json.Serialization.JsonPropertyName("dateEvent")] string? DateEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strTime")] string? StrTime,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strEvent")] string StrEvent,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strHomeTeam")] string StrHomeTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strAwayTeam")] string StrAwayTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("intHomeScore")] string? IntHomeScore,
+    [property: System.Text.Json.Serialization.JsonPropertyName("intAwayScore")] string? IntAwayScore,
+    [property: System.Text.Json.Serialization.JsonPropertyName("intRound")] string? IntRound,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strSeason")] string? StrSeason,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strVenue")] string? StrVenue,
+    [property: System.Text.Json.Serialization.JsonPropertyName("strStatus")] string? StrStatus,
+    [property: System.Text.Json.Serialization.JsonPropertyName("idHomeTeam")] string IdHomeTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("idAwayTeam")] string IdAwayTeam);

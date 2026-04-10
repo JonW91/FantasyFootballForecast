@@ -20,7 +20,7 @@ This document is the working tracker for project planning, delivery status, and 
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
 | API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
-| Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. |
+| Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. TheSportsDB now contributes team, roster, and historical fixture data through the shared provider contract. |
 | Model maturity | Next | Add richer features, calibration, and additional baseline models once more historical data is available. |
 
 ## Delivery Log
@@ -40,13 +40,14 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Updated API and architecture docs for the dashboard summary endpoint | Kept the documentation aligned with the new consolidated read model. |
 | 2026-04-10 | Removed redundant team and player fetches from the home page | Simplified the dashboard load path so the app leans on the consolidated summary read model. |
 | 2026-04-10 | Added a historical backfill action for fixtures and player match stats | Made retrospective import work explicit in the admin console and sync service. |
+| 2026-04-10 | Added TheSportsDB team, roster, and historical fixture adapters | Gave the sync pipeline a second concrete provider source for prototype data. |
 
 ## Near-Term Plan
 
-1. Expand provider adapters behind the shared football data contract.
-2. Improve model features and training evaluation once the history layer is richer.
-3. Tighten operator workflows in the API and Web app as the data layer matures.
-4. Add broader multi-season import coverage if more retrospective data is needed.
+1. Improve model features and training evaluation once the history layer is richer.
+2. Tighten operator workflows in the API and Web app as the data layer matures.
+3. Add broader multi-season import coverage if more retrospective data is needed.
+4. Consider adding player historical-result adapters if a second provider becomes available for that payload.
 
 ## Update Rules
 

@@ -43,6 +43,7 @@ The current runtime topology is:
 8. The Web app reads API endpoints and renders dashboards and admin workflows.
 9. The home page consumes a consolidated dashboard summary endpoint so the main control panel can show counts and the latest run state without assembling multiple requests itself.
 10. The admin workflow can trigger a historical backfill path that prioritizes fixture rows and player match history for retrospective training data.
+11. TheSportsDB now contributes team, roster, and historical fixture data through the same provider contract, giving the sync pipeline a second concrete data source.
 
 ## Provider Strategy
 

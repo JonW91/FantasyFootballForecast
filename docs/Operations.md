@@ -51,6 +51,7 @@ During sync, the current implementation also records:
 - team match rows derived from completed fixtures
 
 The admin console also exposes a historical backfill action that skips the live-news and availability feeds and focuses on fixtures plus player match history for deeper retrospective coverage.
+TheSportsDB currently supplies teams, rosters, and historical fixtures through the shared sync contract, so provider-specific runs can still populate the prototype even when the live FPL feed is unavailable.
 
 ## Migrations
 
