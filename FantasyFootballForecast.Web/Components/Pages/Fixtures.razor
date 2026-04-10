@@ -5,28 +5,42 @@
 
 <PageTitle>Fixtures</PageTitle>
 
-<h2>Fixtures</h2>
-
 <div class="panel">
+    <div class="hero-copy mb-3">
+        Review the upcoming fixture list and see which matches are still live in the local sample data.
+    </div>
     @if (fixtures is null)
     {
         <p>Loading...</p>
     }
     else
     {
-        @foreach (var fixture in fixtures)
+        <div class="hero-stats mb-3">
+            <div><span>@fixtures.Count</span><label>Loaded</label></div>
+            <div><span>@fixtures.Count(fixture => fixture.IsFinished)</span><label>Finished</label></div>
+            <div><span>@fixtures.Count(fixture => !fixture.IsFinished)</span><label>Upcoming</label></div>
+        </div>
+
+        @if (fixtures.Count == 0)
         {
-            <div class="fixture-card">
-                <div>
-                    <strong>@fixture.HomeTeamName</strong>
-                    <span>vs</span>
-                    <strong>@fixture.AwayTeamName</strong>
+            <p>No fixtures are available yet.</p>
+        }
+        else
+        {
+            @foreach (var fixture in fixtures)
+            {
+                <div class="fixture-card">
+                    <div>
+                        <strong>@fixture.HomeTeamName</strong>
+                        <span>vs</span>
+                        <strong>@fixture.AwayTeamName</strong>
+                    </div>
+                    <div>
+                        <span>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</span>
+                        <span class="badge @(fixture.IsFinished ? "badge-good" : "badge-neutral")">@(fixture.IsFinished ? "Final" : "Upcoming")</span>
+                    </div>
                 </div>
-                <div>
-                    <span>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</span>
-                    <span class="badge @(fixture.IsFinished ? "badge-good" : "badge-neutral")">@(fixture.IsFinished ? "Final" : "Upcoming")</span>
-                </div>
-            </div>
+            }
         }
     }
 </div>

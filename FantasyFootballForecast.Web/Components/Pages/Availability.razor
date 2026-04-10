@@ -4,21 +4,35 @@
 
 <PageTitle>Availability</PageTitle>
 
-<h2>Injury / Suspension Tracker</h2>
-
 <div class="panel">
+    <div class="hero-copy mb-3">
+        Track injury, suspension, and availability flags before setting a fantasy squad.
+    </div>
     @if (items is null)
     {
         <p>Loading...</p>
     }
     else
     {
-        @foreach (var item in items)
+        <div class="hero-stats mb-3">
+            <div><span>@items.Count</span><label>Loaded</label></div>
+            <div><span>@items.Count(item => item.AvailabilityStatus == AvailabilityStatus.Available)</span><label>Available</label></div>
+            <div><span>@items.Count(item => item.AvailabilityStatus != AvailabilityStatus.Available)</span><label>Flagged</label></div>
+        </div>
+
+        @if (items.Count == 0)
         {
-            <div class="list-row">
-                <span>@item.PlayerName - @item.TeamName</span>
-                <strong class="badge @BadgeClass(item.AvailabilityStatus)">@item.AvailabilityStatus</strong>
-            </div>
+            <p>No availability records are available yet.</p>
+        }
+        else
+        {
+            @foreach (var item in items)
+            {
+                <div class="list-row">
+                    <span>@item.PlayerName - @item.TeamName</span>
+                    <strong class="badge @BadgeClass(item.AvailabilityStatus)">@item.AvailabilityStatus</strong>
+                </div>
+            }
         }
     }
 </div>

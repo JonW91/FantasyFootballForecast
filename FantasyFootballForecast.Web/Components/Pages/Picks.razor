@@ -4,10 +4,11 @@
 
 <PageTitle>Top Picks</PageTitle>
 
-<h2>Top Fantasy Picks</h2>
-
 <div class="grid-2">
     <article class="panel">
+        <div class="hero-copy mb-3">
+            Review the highest-value fantasy options and the best-XI prototype from the current model output.
+        </div>
         <h3>Best picks</h3>
         @if (picks is null)
         {
@@ -15,18 +16,30 @@
         }
         else
         {
-            @foreach (var pick in picks)
+            <div class="hero-stats mb-3">
+                <div><span>@picks.Count</span><label>Loaded</label></div>
+                <div><span>@picks.Count(pick => pick.IsSuspended || pick.IsInjuryConcern)</span><label>Flagged</label></div>
+            </div>
+
+            @if (picks.Count == 0)
             {
-                <div class="pick-card">
-                    <div>
-                        <strong>@pick.PlayerName</strong>
-                        <p>@pick.TeamName - @pick.Position</p>
+                <p>No pick suggestions are available yet.</p>
+            }
+            else
+            {
+                @foreach (var pick in picks)
+                {
+                    <div class="pick-card">
+                        <div>
+                            <strong>@pick.PlayerName</strong>
+                            <p>@pick.TeamName - @pick.Position</p>
+                        </div>
+                        <div>
+                            <span>@pick.PredictedPoints.ToString("F1") pts</span>
+                            <span class="badge @(pick.IsSuspended || pick.IsInjuryConcern ? "badge-warning" : "badge-good")">@pick.RecommendationReason</span>
+                        </div>
                     </div>
-                    <div>
-                        <span>@pick.PredictedPoints.ToString("F1") pts</span>
-                        <span class="badge @(pick.IsSuspended || pick.IsInjuryConcern ? "badge-warning" : "badge-good")">@pick.RecommendationReason</span>
-                    </div>
-                </div>
+                }
             }
         }
     </article>
@@ -39,12 +52,24 @@
         }
         else
         {
-            @foreach (var pick in bestXi.Take(11))
+            <div class="hero-stats mb-3">
+                <div><span>@bestXi.Count</span><label>Loaded</label></div>
+                <div><span>@bestXi.Take(11).Count()</span><label>Shown</label></div>
+            </div>
+
+            @if (bestXi.Count == 0)
             {
-                <div class="list-row">
-                    <span>@pick.PlayerName</span>
-                    <strong>@pick.PredictedPoints.ToString("F1")</strong>
-                </div>
+                <p>No best-XI results are available yet.</p>
+            }
+            else
+            {
+                @foreach (var pick in bestXi.Take(11))
+                {
+                    <div class="list-row">
+                        <span>@pick.PlayerName</span>
+                        <strong>@pick.PredictedPoints.ToString("F1")</strong>
+                    </div>
+                }
             }
         }
     </article>
