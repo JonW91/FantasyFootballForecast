@@ -55,6 +55,7 @@ TheSportsDB currently supplies teams, rosters, and historical fixtures through t
 TheSportsDB player-results endpoint is also wired in for retrospective player match stats, which gives the backfill path a second source of history beyond the FPL element-summary feed.
 After any admin sync or training action completes, the console refreshes the latest model and ingestion run summaries so the operator can immediately see the result without navigating elsewhere.
 Historical fixture imports now create missing seasons and gameweeks on demand, which lets backfill runs persist multi-season rows instead of collapsing them into the current season.
+The model status page also includes direct retrain and refresh controls for the player and team models so operators can stay on the evaluation surface while iterating.
 
 ## Migrations
 

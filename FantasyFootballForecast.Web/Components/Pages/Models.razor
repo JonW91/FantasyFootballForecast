@@ -9,6 +9,18 @@
         <div class="hero-copy mb-3">
             Monitor the latest model training runs and the ingestion jobs that feed them.
         </div>
+        <div class="button-row mb-3">
+            <button class="btn btn-outline-light" disabled="@isBusy" @onclick="Refresh">Refresh</button>
+            <button class="btn btn-primary" disabled="@isBusy" @onclick="RetrainAll">Retrain both models</button>
+            <button class="btn btn-outline-light" disabled="@isBusy" @onclick="TrainPlayers">Train player model</button>
+            <button class="btn btn-outline-light" disabled="@isBusy" @onclick="TrainTeams">Train team model</button>
+        </div>
+
+        <div class="hero-stats mb-3">
+            <div><span>@(latestModelRun?.Status ?? "None")</span><label>Latest model</label></div>
+            <div><span>@(latestIngestionRun?.Status ?? "None")</span><label>Latest sync</label></div>
+        </div>
+
         <h3>Training runs</h3>
         @if (modelRuns is null)
         {
@@ -71,10 +83,44 @@
 @code {
     private List<ModelTrainingRunDto>? modelRuns;
     private List<DataIngestionRunDto>? ingestionRuns;
+    private ModelTrainingRunDto? latestModelRun;
+    private DataIngestionRunDto? latestIngestionRun;
+    private bool isBusy;
 
     protected override async Task OnInitializedAsync()
+        => await Refresh();
+
+    private async Task Refresh()
     {
         modelRuns = await Api.GetModelRunsAsync() ?? [];
         ingestionRuns = await Api.GetIngestionRunsAsync() ?? [];
+        latestModelRun = modelRuns.FirstOrDefault();
+        latestIngestionRun = ingestionRuns.FirstOrDefault();
+    }
+
+    private Task RetrainAll() => ExecuteAsync(() => Api.RetrainAsync());
+
+    private Task TrainPlayers() => ExecuteAsync(() => Api.TrainAsync());
+
+    private Task TrainTeams() => ExecuteAsync(() => Api.TrainAsync("team"));
+
+    private async Task ExecuteAsync<T>(Func<Task<T?>> action)
+    {
+        if (isBusy)
+        {
+            return;
+        }
+
+        isBusy = true;
+
+        try
+        {
+            await action();
+            await Refresh();
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 }
