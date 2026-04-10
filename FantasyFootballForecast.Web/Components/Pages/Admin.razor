@@ -24,6 +24,11 @@
         <div><span>@(isBusy ? "Busy" : "Ready")</span><label>Status</label></div>
     </div>
 
+    <div class="hero-stats mt-3">
+        <div><span>@(latestModelRun?.Status ?? "None")</span><label>Latest model</label></div>
+        <div><span>@(latestIngestionRun?.Status ?? "None")</span><label>Latest sync</label></div>
+    </div>
+
     @if (!string.IsNullOrWhiteSpace(message))
     {
         <p class="mt-3">@message</p>
@@ -33,7 +38,14 @@
 @code {
     private string? message;
     private bool isBusy;
+    private ModelTrainingRunDto? latestModelRun;
+    private DataIngestionRunDto? latestIngestionRun;
     private const int buttonCount = 8;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshRunsAsync();
+    }
 
     private Task SyncAll() => ExecuteAsync("Sync all providers", () => Api.SyncAsync());
 
@@ -70,6 +82,7 @@
                 ModelTrainingSummaryDto summary => $"{actionName} completed: {summary.Status} with metric {summary.MetricName} {summary.MetricValue}.",
                 _ => $"{actionName} completed."
             };
+            await RefreshRunsAsync();
         }
         catch (Exception ex)
         {
@@ -79,5 +92,11 @@
         {
             isBusy = false;
         }
+    }
+
+    private async Task RefreshRunsAsync()
+    {
+        latestModelRun = (await Api.GetModelRunsAsync())?.FirstOrDefault();
+        latestIngestionRun = (await Api.GetIngestionRunsAsync())?.FirstOrDefault();
     }
 }

@@ -19,7 +19,7 @@ This document is the working tracker for project planning, delivery status, and 
 | --- | --- | --- |
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
-| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
+| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The admin console now refreshes latest run status after each action. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
 | Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. TheSportsDB now contributes team, roster, historical fixture data, and player match-result history through the shared provider contract. |
 | Model maturity | In progress | The team trainer now preserves actual home/away fixture orientation, and the next step is adding richer features, calibration, and additional baseline models once more historical data is available. |
 
@@ -43,13 +43,14 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Added TheSportsDB team, roster, and historical fixture adapters | Gave the sync pipeline a second concrete provider source for prototype data. |
 | 2026-04-10 | Added TheSportsDB player-result history to the sync provider | Filled the last obvious historical gap so backfill can store player match rows from an alternate source. |
 | 2026-04-10 | Corrected team model training to preserve home/away fixture context | Improved the feature mapping used by the team prediction model and added a training verification test. |
+| 2026-04-10 | Refreshed the admin console with latest run status after each action | Removed the need to navigate away just to see whether sync or training finished. |
 
 ## Near-Term Plan
 
-1. Tighten operator workflows in the API and Web app as the data layer matures.
-2. Add broader multi-season import coverage if more retrospective data is needed.
-3. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
-4. Consider calibration and feature expansion once more historical team and player rows accumulate.
+1. Add broader multi-season import coverage if more retrospective data is needed.
+2. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
+3. Consider calibration and feature expansion once more historical team and player rows accumulate.
+4. Tighten the remaining operator workflow surfaces as the prototype stabilizes.
 
 ## Update Rules
 

@@ -53,6 +53,7 @@ During sync, the current implementation also records:
 The admin console also exposes a historical backfill action that skips the live-news and availability feeds and focuses on fixtures plus player match history for deeper retrospective coverage.
 TheSportsDB currently supplies teams, rosters, and historical fixtures through the shared sync contract, so provider-specific runs can still populate the prototype even when the live FPL feed is unavailable.
 TheSportsDB player-results endpoint is also wired in for retrospective player match stats, which gives the backfill path a second source of history beyond the FPL element-summary feed.
+After any admin sync or training action completes, the console refreshes the latest model and ingestion run summaries so the operator can immediately see the result without navigating elsewhere.
 
 ## Migrations
 
