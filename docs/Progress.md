@@ -35,6 +35,7 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Removed scaffold counter and weather pages | Cleared unused template routes from the web project shell. |
 | 2026-04-10 | Improved admin, team detail, player detail, and predictions pages | Added stronger workflow feedback and navigation for the core operator journey. |
 | 2026-04-10 | Added a dashboard summary API and reused it on the home page | Consolidated the main dashboard read model and reduced dashboard-specific fetch chatter. |
+| 2026-04-10 | Added integration coverage for the dashboard summary endpoint | Confirmed the new consolidated read model stays populated against seeded data. |
 
 ## Near-Term Plan
 

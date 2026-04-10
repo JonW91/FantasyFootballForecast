@@ -50,6 +50,24 @@ public sealed class ApiSmokeTests
         Assert.That(detail.CurrentAvailability.PlayerName, Is.EqualTo(detail.Player.Name));
     }
 
+    [Test]
+    public async Task GetDashboardSummary_ReturnsCountsAndLatestRuns()
+    {
+        await using var factory = new ApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/dashboard-summary");
+
+        Assert.That(response.IsSuccessStatusCode, Is.True);
+
+        var summary = await response.Content.ReadFromJsonAsync<DashboardSummaryDto>();
+        Assert.That(summary, Is.Not.Null);
+        Assert.That(summary!.TeamCount, Is.GreaterThan(0));
+        Assert.That(summary.PlayerCount, Is.GreaterThan(0));
+        Assert.That(summary.LatestModelRun, Is.Not.Null);
+        Assert.That(summary.LatestIngestionRun, Is.Not.Null);
+    }
+
     private sealed class ApiFactory : WebApplicationFactory<Program>
     {
     }
