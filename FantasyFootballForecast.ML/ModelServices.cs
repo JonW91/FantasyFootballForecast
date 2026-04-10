@@ -315,18 +315,20 @@ public sealed class TeamMatchPredictionService : ITeamMatchPredictor
     private Task<List<TeamMatchTrainingRow>> BuildTrainingRowsAsync(CancellationToken cancellationToken)
     {
         return Task.FromResult(_db.TeamMatchStats
-            .Join(_db.Teams, stat => stat.TeamId, team => team.Id, (stat, team) => new TeamMatchTrainingRow
+            .Join(_db.Fixtures, stat => stat.FixtureId, fixture => fixture.Id, (stat, fixture) => new { stat, fixture })
+            .Join(_db.Teams, joined => joined.stat.TeamId, team => team.Id, (joined, team) => new { joined.stat, joined.fixture, team })
+            .Join(_db.Teams, joined => joined.stat.OpponentTeamId, opponent => opponent.Id, (joined, opponent) => new TeamMatchTrainingRow
             {
-                HomeStrength = stat.HomeStrength > stat.AwayStrength ? (float)stat.HomeStrength : (float)stat.AwayStrength,
-                AwayStrength = stat.HomeStrength > stat.AwayStrength ? (float)stat.AwayStrength : (float)stat.HomeStrength,
-                HomeExpectedGoalsFor = (float)stat.ExpectedGoalsFor,
-                AwayExpectedGoalsFor = (float)stat.ExpectedGoalsAgainst,
-                HomeExpectedGoalsAgainst = (float)stat.ExpectedGoalsAgainst,
-                AwayExpectedGoalsAgainst = (float)stat.ExpectedGoalsFor,
-                IsHomeFixture = 1f,
-                HomeRecentForm = (float)team.StrengthRating / 10f,
-                AwayRecentForm = (float)stat.PossessionPercent / 100f,
-                Label = stat.GoalsFor > stat.GoalsAgainst
+                HomeStrength = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.HomeStrength : (float)joined.stat.AwayStrength,
+                AwayStrength = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.AwayStrength : (float)joined.stat.HomeStrength,
+                HomeExpectedGoalsFor = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.ExpectedGoalsFor : (float)joined.stat.ExpectedGoalsAgainst,
+                AwayExpectedGoalsFor = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.ExpectedGoalsAgainst : (float)joined.stat.ExpectedGoalsFor,
+                HomeExpectedGoalsAgainst = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.ExpectedGoalsAgainst : (float)joined.stat.ExpectedGoalsFor,
+                AwayExpectedGoalsAgainst = joined.stat.TeamId == joined.fixture.HomeTeamId ? (float)joined.stat.ExpectedGoalsFor : (float)joined.stat.ExpectedGoalsAgainst,
+                IsHomeFixture = joined.stat.TeamId == joined.fixture.HomeTeamId ? 1f : 0f,
+                HomeRecentForm = (float)joined.team.StrengthRating / 10f,
+                AwayRecentForm = (float)opponent.StrengthRating / 10f,
+                Label = joined.stat.GoalsFor > joined.stat.GoalsAgainst
             })
             .ToList());
     }

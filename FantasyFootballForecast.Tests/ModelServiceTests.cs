@@ -36,6 +36,20 @@ public sealed class ModelServiceTests
         Assert.That(result.HomeWinProbability, Is.LessThanOrEqualTo(1));
     }
 
+    [Test]
+    public async Task TeamModelTrainingReturnsACompletedSummary()
+    {
+        await using var db = CreateDb();
+        var environment = new TestHostEnvironment(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var service = new TeamMatchPredictionService(db, environment);
+
+        var summary = await service.TrainAsync();
+
+        Assert.That(summary.Status, Is.EqualTo("Completed"));
+        Assert.That(summary.TrainingSampleCount, Is.GreaterThan(0));
+        Assert.That(summary.MetricValue, Is.GreaterThanOrEqualTo(0));
+    }
+
     private static FantasyFootballForecastDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<FantasyFootballForecastDbContext>()
