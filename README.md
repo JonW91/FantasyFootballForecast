@@ -30,6 +30,13 @@ Additional documentation:
 - `FantasyFootballForecast.Tests` - NUnit unit tests
 - `FantasyFootballForecast.IntegrationTests` - API smoke tests
 
+The current sync stage pulls:
+
+- current FPL teams, players, fixtures, and availability
+- current price and ownership snapshots
+- per-player historical FPL match rows from `element-summary/{id}/`
+- fixture-derived team match rows for completed matches
+
 ## Local run
 
 1. Restore and build:

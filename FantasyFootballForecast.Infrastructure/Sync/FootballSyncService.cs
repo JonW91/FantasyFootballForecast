@@ -63,8 +63,12 @@ public sealed class FootballSyncService : IFootballSyncService
                 upserted += await UpsertFixturesAsync(fixtures, cancellationToken);
                 upserted += await UpsertNewsAsync(news, cancellationToken);
                 upserted += await UpsertAvailabilityAsync(availability, cancellationToken);
+                var snapshotCount = await UpsertPlayerSnapshotsAsync(players, cancellationToken);
+                var historicalMatchCount = await UpsertHistoricalPlayerMatchStatsAsync(provider, players, cancellationToken);
+                var teamMatchCount = await UpsertTeamMatchStatsAsync(fixtures, cancellationToken);
 
-                processed += teams.Count + players.Count + fixtures.Count + news.Count + availability.Count;
+                upserted += snapshotCount + historicalMatchCount + teamMatchCount;
+                processed += teams.Count + players.Count + fixtures.Count + news.Count + availability.Count + snapshotCount + historicalMatchCount + teamMatchCount;
             }
 
             run.Status = "Completed";
@@ -340,6 +344,207 @@ public sealed class FootballSyncService : IFootballSyncService
 
         await _db.SaveChangesAsync(cancellationToken);
         return affected;
+    }
+
+    private async Task<int> UpsertPlayerSnapshotsAsync(IReadOnlyList<ProviderPlayerDto> players, CancellationToken cancellationToken)
+    {
+        var currentGameweek = await _db.Gameweeks
+            .OrderByDescending(gameweek => gameweek.Number)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (currentGameweek is null)
+        {
+            return 0;
+        }
+
+        var affected = 0;
+        foreach (var player in players)
+        {
+            var playerId = await ResolvePlayerIdAsync(player.ExternalId, cancellationToken);
+            if (playerId is null)
+            {
+                continue;
+            }
+
+            var priceSnapshot = await _db.FantasyPlayerPrices.FirstOrDefaultAsync(x => x.PlayerId == playerId && x.GameweekId == currentGameweek.Id, cancellationToken);
+            if (priceSnapshot is null)
+            {
+                _db.FantasyPlayerPrices.Add(new FantasyPlayerPrice
+                {
+                    PlayerId = playerId.Value,
+                    GameweekId = currentGameweek.Id,
+                    Price = player.Price,
+                    SourceName = "Provider snapshot",
+                    CapturedUtc = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                priceSnapshot.Price = player.Price;
+                priceSnapshot.SourceName = "Provider snapshot";
+                priceSnapshot.CapturedUtc = DateTime.UtcNow;
+            }
+
+            var ownershipSnapshot = await _db.FantasyPlayerOwnerships.FirstOrDefaultAsync(x => x.PlayerId == playerId && x.GameweekId == currentGameweek.Id, cancellationToken);
+            if (ownershipSnapshot is null)
+            {
+                _db.FantasyPlayerOwnerships.Add(new FantasyPlayerOwnership
+                {
+                    PlayerId = playerId.Value,
+                    GameweekId = currentGameweek.Id,
+                    OwnershipPercent = player.OwnershipPercent,
+                    SourceName = "Provider snapshot",
+                    CapturedUtc = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                ownershipSnapshot.OwnershipPercent = player.OwnershipPercent;
+                ownershipSnapshot.SourceName = "Provider snapshot";
+                ownershipSnapshot.CapturedUtc = DateTime.UtcNow;
+            }
+
+            affected += 2;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return affected;
+    }
+
+    private async Task<int> UpsertHistoricalPlayerMatchStatsAsync(IFootballDataProvider provider, IReadOnlyList<ProviderPlayerDto> players, CancellationToken cancellationToken)
+    {
+        var affected = 0;
+
+        foreach (var player in players)
+        {
+            var playerId = await ResolvePlayerIdAsync(player.ExternalId, cancellationToken);
+            if (playerId is null)
+            {
+                continue;
+            }
+
+            var historyRows = await provider.GetPlayerMatchStatsAsync(player.ExternalId, cancellationToken);
+            foreach (var history in historyRows)
+            {
+                var fixtureId = await _db.Fixtures.Where(fixture => fixture.ExternalId == history.FixtureExternalId).Select(fixture => (int?)fixture.Id).FirstOrDefaultAsync(cancellationToken);
+                if (fixtureId is null)
+                {
+                    continue;
+                }
+
+                var existing = await _db.PlayerMatchStats.FirstOrDefaultAsync(x => x.PlayerId == playerId && x.FixtureId == fixtureId, cancellationToken);
+                if (existing is null)
+                {
+                    existing = new PlayerMatchStat
+                    {
+                        PlayerId = playerId.Value,
+                        FixtureId = fixtureId.Value
+                    };
+                    _db.PlayerMatchStats.Add(existing);
+                }
+
+                existing.MinutesPlayed = history.MinutesPlayed;
+                existing.Goals = history.Goals;
+                existing.Assists = history.Assists;
+                existing.CleanSheets = history.CleanSheets;
+                existing.Saves = history.Saves;
+                existing.BonusPoints = history.BonusPoints;
+                existing.GoalsConceded = history.GoalsConceded;
+                existing.YellowCards = history.YellowCards;
+                existing.RedCards = history.RedCards;
+                existing.FantasyPoints = history.FantasyPoints;
+                existing.IsHome = history.IsHome;
+                existing.OpponentStrength = history.OpponentStrength;
+                existing.RollingForm = history.RollingForm;
+                existing.PriceAtKickoff = history.PriceAtKickoff;
+
+                affected++;
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return affected;
+    }
+
+    private async Task<int> UpsertTeamMatchStatsAsync(IReadOnlyList<ProviderFixtureDto> fixtures, CancellationToken cancellationToken)
+    {
+        var affected = 0;
+        foreach (var fixture in fixtures.Where(fixture => fixture.IsFinished && fixture.HomeScore.HasValue && fixture.AwayScore.HasValue))
+        {
+            var fixtureId = await _db.Fixtures.Where(item => item.ExternalId == fixture.ExternalId).Select(item => (int?)item.Id).FirstOrDefaultAsync(cancellationToken);
+            if (fixtureId is null)
+            {
+                continue;
+            }
+
+            var homeTeam = await _db.Teams.FirstOrDefaultAsync(team => team.ExternalId == fixture.HomeTeamExternalId, cancellationToken);
+            var awayTeam = await _db.Teams.FirstOrDefaultAsync(team => team.ExternalId == fixture.AwayTeamExternalId, cancellationToken);
+            if (homeTeam is null || awayTeam is null)
+            {
+                continue;
+            }
+
+            await UpsertTeamMatchStatAsync(
+                fixtureId.Value,
+                homeTeam.Id,
+                awayTeam.Id,
+                fixture.HomeScore!.Value,
+                fixture.AwayScore!.Value,
+                true,
+                homeTeam.StrengthRating,
+                awayTeam.StrengthRating,
+                cancellationToken);
+
+            await UpsertTeamMatchStatAsync(
+                fixtureId.Value,
+                awayTeam.Id,
+                homeTeam.Id,
+                fixture.AwayScore!.Value,
+                fixture.HomeScore!.Value,
+                false,
+                awayTeam.StrengthRating,
+                homeTeam.StrengthRating,
+                cancellationToken);
+
+            affected += 2;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return affected;
+    }
+
+    private async Task UpsertTeamMatchStatAsync(
+        int fixtureId,
+        int teamId,
+        int opponentTeamId,
+        int goalsFor,
+        int goalsAgainst,
+        bool isHome,
+        decimal homeStrength,
+        decimal awayStrength,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _db.TeamMatchStats.FirstOrDefaultAsync(x => x.TeamId == teamId && x.FixtureId == fixtureId, cancellationToken);
+        if (existing is null)
+        {
+            existing = new TeamMatchStat
+            {
+                TeamId = teamId,
+                FixtureId = fixtureId,
+                OpponentTeamId = opponentTeamId
+            };
+            _db.TeamMatchStats.Add(existing);
+        }
+
+        existing.GoalsFor = goalsFor;
+        existing.GoalsAgainst = goalsAgainst;
+        existing.ExpectedGoalsFor = Math.Max(0, goalsFor) + 0.15m;
+        existing.ExpectedGoalsAgainst = Math.Max(0, goalsAgainst) + 0.15m;
+        existing.ShotsFor = goalsFor * 3 + 4;
+        existing.ShotsAgainst = goalsAgainst * 3 + 4;
+        existing.PossessionPercent = Math.Clamp(50m + (isHome ? 4m : -4m) + (homeStrength - awayStrength) / 10m, 35m, 65m);
+        existing.HomeStrength = homeStrength;
+        existing.AwayStrength = awayStrength;
     }
 
     private async Task<int?> ResolvePlayerIdAsync(int? externalId, CancellationToken cancellationToken)

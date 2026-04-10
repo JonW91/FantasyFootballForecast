@@ -33,6 +33,7 @@ public interface IFootballDataProvider
     Task<IReadOnlyList<ProviderFixtureDto>> GetFixturesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ProviderNewsDto>> GetNewsAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ProviderAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default);
 }
 
 public interface IAvailabilityEnrichmentService
@@ -138,6 +139,27 @@ public sealed record ProviderAvailabilityDto(
     string? SourceUrl,
     string RawText,
     DateTime LastVerifiedUtc);
+
+public sealed record ProviderPlayerMatchStatDto(
+    int PlayerExternalId,
+    int OpponentTeamExternalId,
+    int FixtureExternalId,
+    int GameweekNumber,
+    DateTime KickoffUtc,
+    bool IsHome,
+    int MinutesPlayed,
+    int Goals,
+    int Assists,
+    int CleanSheets,
+    int Saves,
+    int BonusPoints,
+    int GoalsConceded,
+    int YellowCards,
+    int RedCards,
+    decimal FantasyPoints,
+    decimal OpponentStrength,
+    decimal RollingForm,
+    decimal PriceAtKickoff);
 
 public sealed record AvailabilityEnrichmentResult(
     AvailabilityStatus Status,

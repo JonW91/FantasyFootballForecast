@@ -44,6 +44,12 @@ Each cycle performs:
 2. provider sync
 3. full model retraining
 
+During sync, the current implementation also records:
+
+- current price and ownership snapshots for each player
+- current-season player match history from the FPL `element-summary` endpoint
+- team match rows derived from completed fixtures
+
 ## Migrations
 
 Add a migration:

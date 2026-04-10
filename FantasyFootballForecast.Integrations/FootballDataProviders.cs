@@ -27,6 +27,7 @@ public abstract class FootballDataProviderBase : IFootballDataProvider
     public abstract Task<IReadOnlyList<ProviderFixtureDto>> GetFixturesAsync(CancellationToken cancellationToken = default);
     public abstract Task<IReadOnlyList<ProviderNewsDto>> GetNewsAsync(CancellationToken cancellationToken = default);
     public abstract Task<IReadOnlyList<ProviderAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default);
+    public abstract Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default);
 
     protected async Task<T> GetCachedJsonAsync<T>(string cacheKey, string relativeUrl, TimeSpan ttl, CancellationToken cancellationToken)
     {
@@ -171,6 +172,35 @@ public sealed class FplPublicFootballDataProvider : FootballDataProviderBase
             .ToList();
     }
 
+    public override async Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
+    {
+        var bootstrap = await GetCachedJsonAsync<FplBootstrapStatic>("fpl.bootstrap", "bootstrap-static/", TimeSpan.FromMinutes(10), cancellationToken);
+        var teamStrengths = bootstrap.Teams.ToDictionary(team => team.Id, team => team.Strength);
+        var summary = await GetCachedJsonAsync<FplElementSummary>($"fpl.summary.{playerExternalId}", $"element-summary/{playerExternalId}/", TimeSpan.FromMinutes(30), cancellationToken);
+
+        return summary.History.Select(history => new ProviderPlayerMatchStatDto(
+                PlayerExternalId: playerExternalId,
+                OpponentTeamExternalId: history.OpponentTeam,
+                FixtureExternalId: history.Fixture,
+                GameweekNumber: history.Round,
+                KickoffUtc: history.KickoffTime ?? DateTime.UtcNow,
+                IsHome: history.WasHome,
+                MinutesPlayed: history.Minutes,
+                Goals: history.GoalsScored,
+                Assists: history.Assists,
+                CleanSheets: history.CleanSheets,
+                Saves: history.Saves,
+                BonusPoints: history.Bonus,
+                GoalsConceded: history.GoalsConceded,
+                YellowCards: history.YellowCards,
+                RedCards: history.RedCards,
+                FantasyPoints: history.TotalPoints,
+                OpponentStrength: teamStrengths.TryGetValue(history.OpponentTeam, out var strength) ? strength : 50m,
+                RollingForm: history.TotalPoints,
+                PriceAtKickoff: history.Value / 10m))
+            .ToList();
+    }
+
     private static AvailabilityStatus MapAvailability(string? status, int? chanceOfPlayingNextRound) => status switch
     {
         "a" => AvailabilityStatus.Available,
@@ -207,6 +237,9 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
 
     public override Task<IReadOnlyList<ProviderAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ProviderAvailabilityDto>>([]);
+
+    public override Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<ProviderPlayerMatchStatDto>>([]);
 }
 
 public sealed class ApiFootballDataProvider : FootballDataProviderBase
@@ -232,6 +265,9 @@ public sealed class ApiFootballDataProvider : FootballDataProviderBase
 
     public override Task<IReadOnlyList<ProviderAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ProviderAvailabilityDto>>([]);
+
+    public override Task<IReadOnlyList<ProviderPlayerMatchStatDto>> GetPlayerMatchStatsAsync(int playerExternalId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<ProviderPlayerMatchStatDto>>([]);
 }
 
 file sealed class FplBootstrapStatic
@@ -241,6 +277,12 @@ file sealed class FplBootstrapStatic
 
     [System.Text.Json.Serialization.JsonPropertyName("elements")]
     public List<FplPlayer> Elements { get; set; } = [];
+}
+
+file sealed class FplElementSummary
+{
+    [System.Text.Json.Serialization.JsonPropertyName("history")]
+    public List<FplPlayerHistory> History { get; set; } = [];
 }
 
 file sealed record FplTeam(
@@ -286,3 +328,21 @@ file sealed record FplFixture(
     [property: System.Text.Json.Serialization.JsonPropertyName("is_bgw")] bool IsBlankGameweek,
     [property: System.Text.Json.Serialization.JsonPropertyName("is_dgw")] bool IsDoubleGameweek,
     [property: System.Text.Json.Serialization.JsonPropertyName("status")] string? Status);
+
+file sealed record FplPlayerHistory(
+    [property: System.Text.Json.Serialization.JsonPropertyName("fixture")] int Fixture,
+    [property: System.Text.Json.Serialization.JsonPropertyName("round")] int Round,
+    [property: System.Text.Json.Serialization.JsonPropertyName("opponent_team")] int OpponentTeam,
+    [property: System.Text.Json.Serialization.JsonPropertyName("kickoff_time")] DateTime? KickoffTime,
+    [property: System.Text.Json.Serialization.JsonPropertyName("was_home")] bool WasHome,
+    [property: System.Text.Json.Serialization.JsonPropertyName("minutes")] int Minutes,
+    [property: System.Text.Json.Serialization.JsonPropertyName("goals_scored")] int GoalsScored,
+    [property: System.Text.Json.Serialization.JsonPropertyName("assists")] int Assists,
+    [property: System.Text.Json.Serialization.JsonPropertyName("clean_sheets")] int CleanSheets,
+    [property: System.Text.Json.Serialization.JsonPropertyName("goals_conceded")] int GoalsConceded,
+    [property: System.Text.Json.Serialization.JsonPropertyName("saves")] int Saves,
+    [property: System.Text.Json.Serialization.JsonPropertyName("bonus")] int Bonus,
+    [property: System.Text.Json.Serialization.JsonPropertyName("yellow_cards")] int YellowCards,
+    [property: System.Text.Json.Serialization.JsonPropertyName("red_cards")] int RedCards,
+    [property: System.Text.Json.Serialization.JsonPropertyName("total_points")] decimal TotalPoints,
+    [property: System.Text.Json.Serialization.JsonPropertyName("value")] decimal Value);

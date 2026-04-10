@@ -36,9 +36,11 @@ The current runtime topology is:
 1. Provider adapters fetch football, fantasy, availability, and news data.
 2. `FootballSyncService` maps provider DTOs into database entities.
 3. Availability/news enrichment produces explainable structured availability signals.
-4. The API exposes persisted data and prediction results.
-5. ML services train from persisted historical rows and write training-run metadata.
-6. The Web app reads API endpoints and renders dashboards and admin workflows.
+4. Historical player match rows and current price/ownership snapshots are captured from the FPL provider.
+5. Fixture results are transformed into team match rows for model training.
+6. The API exposes persisted data and prediction results.
+7. ML services train from persisted historical rows and write training-run metadata.
+8. The Web app reads API endpoints and renders dashboards and admin workflows.
 
 ## Provider Strategy
 
@@ -54,6 +56,8 @@ Current state:
   - Scaffolded adapter.
 
 This lets the sync layer stay stable while providers evolve independently.
+
+The FPL provider now also exposes current-season player match history from `element-summary/{id}/` so the sync service can populate `PlayerMatchStats`, `FantasyPlayerPrices`, and `FantasyPlayerOwnership` without depending on synthetic rows.
 
 ## Availability and News
 
