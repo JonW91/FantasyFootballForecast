@@ -15,6 +15,7 @@ Additional documentation:
 - [`docs/Architecture.md`](C:/Users/Jon/source/repos/FantasyFootballForecast/docs/Architecture.md)
 - [`docs/Api.md`](C:/Users/Jon/source/repos/FantasyFootballForecast/docs/Api.md)
 - [`docs/Operations.md`](C:/Users/Jon/source/repos/FantasyFootballForecast/docs/Operations.md)
+- [`docs/Progress.md`](C:/Users/Jon/source/repos/FantasyFootballForecast/docs/Progress.md)
 
 ## Solution layout
 
