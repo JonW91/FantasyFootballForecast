@@ -74,12 +74,80 @@
     </article>
 </div>
 
+<div class="grid-2 mt-4">
+    <article class="panel">
+        <h3>Latest training run</h3>
+        @if (modelRuns is null)
+        {
+            <p>Loading...</p>
+        }
+        else if (modelRuns.Count == 0)
+        {
+            <p>No training runs recorded yet.</p>
+        }
+        else
+        {
+            var latest = modelRuns[0];
+            <div class="list-row">
+                <span>@latest.ModelName</span>
+                <strong>@latest.Status</strong>
+            </div>
+            <div class="list-row">
+                <span>@latest.EvaluationMetricName</span>
+                <strong>@latest.EvaluationMetricValue</strong>
+            </div>
+            <div class="list-row">
+                <span>Started</span>
+                <strong>@latest.StartedUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</strong>
+            </div>
+            <div class="list-row">
+                <span>Completed</span>
+                <strong>@(latest.CompletedUtc?.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture) ?? "In progress")</strong>
+            </div>
+        }
+    </article>
+
+    <article class="panel">
+        <h3>Latest ingestion run</h3>
+        @if (ingestionRuns is null)
+        {
+            <p>Loading...</p>
+        }
+        else if (ingestionRuns.Count == 0)
+        {
+            <p>No ingestion runs recorded yet.</p>
+        }
+        else
+        {
+            var latest = ingestionRuns[0];
+            <div class="list-row">
+                <span>@latest.SourceName</span>
+                <strong>@latest.Status</strong>
+            </div>
+            <div class="list-row">
+                <span>Processed</span>
+                <strong>@latest.ItemsProcessed</strong>
+            </div>
+            <div class="list-row">
+                <span>Upserted</span>
+                <strong>@latest.ItemsUpserted</strong>
+            </div>
+            <div class="list-row">
+                <span>Completed</span>
+                <strong>@(latest.CompletedUtc?.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture) ?? "In progress")</strong>
+            </div>
+        }
+    </article>
+</div>
+
 @code {
     private List<TeamDto>? teams;
     private List<PlayerDto>? players;
     private List<FixtureDto>? fixtures;
     private List<FantasyPickDto>? topPicks;
     private List<AvailabilityDto>? availability;
+    private List<ModelTrainingRunDto>? modelRuns;
+    private List<DataIngestionRunDto>? ingestionRuns;
 
     private int teamCount;
     private int playerCount;
@@ -92,12 +160,16 @@
         var fixturesTask = Api.GetFixturesAsync(true);
         var picksTask = Api.GetTopPicksAsync(5);
         var availabilityTask = Api.GetAvailabilityAsync();
+        var modelRunsTask = Api.GetModelRunsAsync();
+        var ingestionRunsTask = Api.GetIngestionRunsAsync();
 
         teams = await teamsTask ?? [];
         players = await playersTask ?? [];
         fixtures = await fixturesTask ?? [];
         topPicks = await picksTask ?? [];
         availability = await availabilityTask ?? [];
+        modelRuns = await modelRunsTask ?? [];
+        ingestionRuns = await ingestionRunsTask ?? [];
 
         teamCount = teams.Count;
         playerCount = players.Count;

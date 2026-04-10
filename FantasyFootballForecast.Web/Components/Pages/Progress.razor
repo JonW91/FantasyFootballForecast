@@ -1,0 +1,58 @@
+@page "/progress"
+@rendermode InteractiveServer
+
+<PageTitle>Project Progress</PageTitle>
+
+<section class="hero">
+    <div>
+        <p class="eyebrow">Project Progress</p>
+        <h2>Track the prototype's delivery slice by slice.</h2>
+        <p class="hero-copy">This page mirrors the repository progress tracker so the current state stays visible in the running app.</p>
+    </div>
+    <div class="hero-stats">
+        <div><span>1</span><label>Done</label></div>
+        <div><span>2</span><label>In progress</label></div>
+        <div><span>2</span><label>Next</label></div>
+    </div>
+</section>
+
+<div class="grid-2">
+    <article class="panel">
+        <h3>Current snapshot</h3>
+        <div class="list-row">
+            <span>Solution foundation</span>
+            <strong>Done</strong>
+        </div>
+        <div class="list-row">
+            <span>Live football sync</span>
+            <strong>In progress</strong>
+        </div>
+        <div class="list-row">
+            <span>API and UI surface</span>
+            <strong>In progress</strong>
+        </div>
+        <div class="list-row">
+            <span>Historical data depth</span>
+            <strong>Next</strong>
+        </div>
+        <div class="list-row">
+            <span>Model maturity</span>
+            <strong>Next</strong>
+        </div>
+    </article>
+
+    <article class="panel">
+        <h3>Near-term plan</h3>
+        <ol class="progress-list">
+            <li>Finish the historical import pipeline for fixtures and player match stats.</li>
+            <li>Expand provider adapters behind the shared football data contract.</li>
+            <li>Improve model features and training evaluation once the history layer is richer.</li>
+            <li>Tighten operator workflows in the API and Web app as the data layer matures.</li>
+        </ol>
+    </article>
+</div>
+
+<article class="panel mt-4">
+    <h3>How to update</h3>
+    <p>When a discrete slice lands, update <code>docs/Progress.md</code>, add a delivery log row, and keep the snapshot aligned with the implementation state.</p>
+</article>
