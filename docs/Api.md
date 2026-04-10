@@ -56,6 +56,10 @@ Base route: `/api`
 
 - Returns the home-page summary payload with counts plus the latest model and ingestion runs.
 
+`POST /api/sync/historical`
+
+- Runs a historical backfill for the selected provider and focuses on fixtures and player match stats.
+
 ## Mutation / Admin Endpoints
 
 `POST /api/sync/import`
@@ -95,3 +99,4 @@ Supported provider names in the current build:
 - The API seeds and initializes the local database on startup if needed.
 - Query shape is intentionally simple for local development and can be expanded into paginated read models later.
 - The dashboard uses `GET /api/dashboard-summary` to keep the home page aligned with the latest seeded and operational state.
+- The admin console exposes `POST /api/sync/historical` for explicit historical backfill runs.

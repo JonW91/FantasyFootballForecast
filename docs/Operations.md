@@ -50,6 +50,8 @@ During sync, the current implementation also records:
 - current-season player match history from the FPL `element-summary` endpoint
 - team match rows derived from completed fixtures
 
+The admin console also exposes a historical backfill action that skips the live-news and availability feeds and focuses on fixtures plus player match history for deeper retrospective coverage.
+
 ## Migrations
 
 Add a migration:

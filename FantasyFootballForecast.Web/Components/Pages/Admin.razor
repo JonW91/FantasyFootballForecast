@@ -11,6 +11,7 @@
     <div class="button-row">
         <button class="btn btn-primary" disabled="@isBusy" @onclick="SyncAll">Sync all providers</button>
         <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncFpl">Sync FPL</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="BackfillHistorical">Backfill history</button>
         <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncTheSportsDb">Sync TheSportsDB</button>
         <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncApiFootball">Sync API-Football</button>
         <button class="btn btn-outline-light" disabled="@isBusy" @onclick="RetrainAll">Retrain both models</button>
@@ -32,11 +33,13 @@
 @code {
     private string? message;
     private bool isBusy;
-    private const int buttonCount = 7;
+    private const int buttonCount = 8;
 
     private Task SyncAll() => ExecuteAsync("Sync all providers", () => Api.SyncAsync());
 
     private Task SyncFpl() => ExecuteAsync("Sync FPL", () => Api.SyncAsync("FPL Public API"));
+
+    private Task BackfillHistorical() => ExecuteAsync("Backfill history", () => Api.SyncHistoricalAsync("FPL Public API"));
 
     private Task SyncTheSportsDb() => ExecuteAsync("Sync TheSportsDB", () => Api.SyncAsync("TheSportsDB"));
 

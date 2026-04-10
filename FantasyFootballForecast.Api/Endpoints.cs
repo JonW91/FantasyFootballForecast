@@ -593,6 +593,12 @@ public static class Endpoints
             return Results.Ok(run);
         });
 
+        group.MapPost("/sync/historical", async (IFootballSyncService syncService, string? provider, CancellationToken cancellationToken) =>
+        {
+            var run = await syncService.SyncHistoricalAsync(string.IsNullOrWhiteSpace(provider) ? "FPL Public API" : provider, cancellationToken);
+            return Results.Ok(run);
+        });
+
         group.MapPost("/models/train", async (IModelTrainingService trainingService, string? model, CancellationToken cancellationToken) =>
         {
             var summary = model?.ToLowerInvariant() switch

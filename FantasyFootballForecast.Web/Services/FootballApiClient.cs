@@ -60,6 +60,9 @@ public sealed class FootballApiClient
     public Task<DataIngestionRunDto?> SyncAsync(string? provider = null, CancellationToken cancellationToken = default)
         => PostAsync<DataIngestionRunDto>(BuildUrl("api/sync/import", ("provider", provider)), cancellationToken);
 
+    public Task<DataIngestionRunDto?> SyncHistoricalAsync(string? provider = null, CancellationToken cancellationToken = default)
+        => PostAsync<DataIngestionRunDto>(BuildUrl("api/sync/historical", ("provider", provider)), cancellationToken);
+
     private async Task<T?> PostAsync<T>(string url, CancellationToken cancellationToken)
     {
         using var response = await _httpClient.PostAsync(url, content: null, cancellationToken);

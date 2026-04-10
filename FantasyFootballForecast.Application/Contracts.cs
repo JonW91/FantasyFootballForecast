@@ -62,6 +62,7 @@ public interface IFootballSyncService
 {
     Task<DataIngestionRunDto> SyncFromProviderAsync(string providerName, CancellationToken cancellationToken = default);
     Task<DataIngestionRunDto> SyncAllAsync(CancellationToken cancellationToken = default);
+    Task<DataIngestionRunDto> SyncHistoricalAsync(string providerName = "FPL Public API", CancellationToken cancellationToken = default);
 }
 
 public interface IFantasyRecommendationService

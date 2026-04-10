@@ -27,9 +27,15 @@ public sealed class FootballSyncService : IFootballSyncService
     }
 
     public Task<DataIngestionRunDto> SyncAllAsync(CancellationToken cancellationToken = default)
-        => SyncFromProviderAsync("all", cancellationToken);
+        => RunSyncAsync("all", includeOperationalFeeds: true, includeSnapshots: true, includeHistoricalStats: true, cancellationToken);
 
     public async Task<DataIngestionRunDto> SyncFromProviderAsync(string providerName, CancellationToken cancellationToken = default)
+        => await RunSyncAsync(providerName, includeOperationalFeeds: true, includeSnapshots: true, includeHistoricalStats: true, cancellationToken);
+
+    public async Task<DataIngestionRunDto> SyncHistoricalAsync(string providerName = "FPL Public API", CancellationToken cancellationToken = default)
+        => await RunSyncAsync(providerName, includeOperationalFeeds: false, includeSnapshots: false, includeHistoricalStats: true, cancellationToken);
+
+    private async Task<DataIngestionRunDto> RunSyncAsync(string providerName, bool includeOperationalFeeds, bool includeSnapshots, bool includeHistoricalStats, CancellationToken cancellationToken)
     {
         var run = new DataIngestionRun
         {
@@ -55,20 +61,25 @@ public sealed class FootballSyncService : IFootballSyncService
                 var teams = await provider.GetTeamsAsync(cancellationToken);
                 var players = await provider.GetPlayersAsync(cancellationToken);
                 var fixtures = await provider.GetFixturesAsync(cancellationToken);
-                var news = await provider.GetNewsAsync(cancellationToken);
-                var availability = await provider.GetAvailabilityAsync(cancellationToken);
 
                 upserted += await UpsertTeamsAsync(teams, cancellationToken);
                 upserted += await UpsertPlayersAsync(players, cancellationToken);
                 upserted += await UpsertFixturesAsync(fixtures, cancellationToken);
-                upserted += await UpsertNewsAsync(news, cancellationToken);
-                upserted += await UpsertAvailabilityAsync(availability, cancellationToken);
-                var snapshotCount = await UpsertPlayerSnapshotsAsync(players, cancellationToken);
-                var historicalMatchCount = await UpsertHistoricalPlayerMatchStatsAsync(provider, players, cancellationToken);
+                var news = includeOperationalFeeds ? await provider.GetNewsAsync(cancellationToken) : [];
+                var availability = includeOperationalFeeds ? await provider.GetAvailabilityAsync(cancellationToken) : [];
+                var snapshotCount = includeSnapshots ? await UpsertPlayerSnapshotsAsync(players, cancellationToken) : 0;
+                var historicalMatchCount = includeHistoricalStats ? await UpsertHistoricalPlayerMatchStatsAsync(provider, players, cancellationToken) : 0;
                 var teamMatchCount = await UpsertTeamMatchStatsAsync(fixtures, cancellationToken);
 
+                if (includeOperationalFeeds)
+                {
+                    upserted += await UpsertNewsAsync(news, cancellationToken);
+                    upserted += await UpsertAvailabilityAsync(availability, cancellationToken);
+                    processed += news.Count + availability.Count;
+                }
+
                 upserted += snapshotCount + historicalMatchCount + teamMatchCount;
-                processed += teams.Count + players.Count + fixtures.Count + news.Count + availability.Count + snapshotCount + historicalMatchCount + teamMatchCount;
+                processed += teams.Count + players.Count + fixtures.Count + snapshotCount + historicalMatchCount + teamMatchCount;
             }
 
             run.Status = "Completed";
