@@ -4,9 +4,10 @@
 
 <PageTitle>Players</PageTitle>
 
-<h2>Players</h2>
-
 <div class="panel">
+    <div class="hero-copy mb-3">
+        Search the player pool, compare form and value, and jump into player detail views.
+    </div>
     <div class="row g-2 mb-3">
         <div class="col-md-6">
             <input class="form-control" placeholder="Search players" @bind="search" @bind:event="oninput" />
@@ -26,6 +27,20 @@
     }
     else
     {
+        var visiblePlayers = FilteredPlayers.ToList();
+
+        <div class="hero-stats mb-3">
+            <div><span>@players.Count</span><label>Loaded</label></div>
+            <div><span>@visiblePlayers.Count</span><label>Visible</label></div>
+            <div><span>@SortLabel(sortMode)</span><label>Sort</label></div>
+        </div>
+
+        @if (!visiblePlayers.Any())
+        {
+            <p>No players match your search.</p>
+        }
+        else
+        {
         <div class="table-wrap">
             <table class="table table-dark table-striped align-middle">
                 <thead>
@@ -40,7 +55,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var player in FilteredPlayers)
+                    @foreach (var player in visiblePlayers)
                     {
                         <tr>
                             <td><a href="@($"players/{player.Id}")">@player.Name</a></td>
@@ -55,6 +70,7 @@
                 </tbody>
             </table>
         </div>
+        }
     }
 </div>
 
@@ -92,5 +108,12 @@
         AvailabilityStatus.Doubtful => "badge-warning",
         AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.Suspended => "badge-bad",
         _ => "badge-neutral"
+    };
+
+    private static string SortLabel(string mode) => mode switch
+    {
+        "price" => "Price",
+        "points" => "Recent points",
+        _ => "Recent form"
     };
 }

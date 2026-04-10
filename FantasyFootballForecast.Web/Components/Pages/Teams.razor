@@ -4,9 +4,10 @@
 
 <PageTitle>Teams</PageTitle>
 
-<h2>Teams</h2>
-
 <div class="panel">
+    <div class="hero-copy mb-3">
+        Browse the clubs, compare strength ratings, and jump into team detail pages.
+    </div>
     <input class="form-control mb-3" placeholder="Search teams" @bind="search" @bind:event="oninput" />
 
     @if (teams is null)
@@ -15,6 +16,19 @@
     }
     else
     {
+        var visibleTeams = FilteredTeams.ToList();
+
+        <div class="hero-stats mb-3">
+            <div><span>@teams.Count</span><label>Loaded</label></div>
+            <div><span>@visibleTeams.Count</span><label>Visible</label></div>
+        </div>
+
+        @if (!visibleTeams.Any())
+        {
+            <p>No teams match your search.</p>
+        }
+        else
+        {
         <div class="table-wrap">
             <table class="table table-dark table-striped align-middle">
                 <thead>
@@ -26,7 +40,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var team in FilteredTeams)
+                    @foreach (var team in visibleTeams)
                     {
                         <tr>
                             <td><a href="@($"teams/{team.Id}")">@team.Name</a></td>
@@ -38,6 +52,7 @@
                 </tbody>
             </table>
         </div>
+        }
     }
 </div>
 
