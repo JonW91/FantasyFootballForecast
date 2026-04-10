@@ -106,6 +106,7 @@ public sealed record ProviderPlayerDto(
 public sealed record ProviderFixtureDto(
     int ExternalId,
     int SeasonExternalId,
+    string? SeasonLabel,
     int GameweekNumber,
     int HomeTeamExternalId,
     int AwayTeamExternalId,

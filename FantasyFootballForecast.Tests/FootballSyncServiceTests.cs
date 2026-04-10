@@ -23,6 +23,8 @@ public sealed class FootballSyncServiceTests
         var run = await service.SyncHistoricalAsync();
 
         Assert.That(run.Status, Is.EqualTo("Completed"));
+        Assert.That(db.Seasons.Count(), Is.EqualTo(2));
+        Assert.That(db.Gameweeks.Count(), Is.EqualTo(2));
         Assert.That(db.Fixtures.Count(), Is.EqualTo(1));
         Assert.That(db.PlayerMatchStats.Count(), Is.EqualTo(1));
         Assert.That(db.TeamMatchStats.Count(), Is.EqualTo(2));
@@ -59,7 +61,7 @@ public sealed class FootballSyncServiceTests
 
         public Task<IReadOnlyList<ProviderFixtureDto>> GetFixturesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<ProviderFixtureDto>>([
-                new ProviderFixtureDto(101, 2025, 1, 1, 2, DateTime.UtcNow.AddDays(-1), 2, 1, "Emirates Stadium", true, false, false, "Finished")
+                new ProviderFixtureDto(101, 2025, "2024-2025", 32, 1, 2, DateTime.UtcNow.AddDays(-1), 2, 1, "Emirates Stadium", true, false, false, "Finished")
             ]);
 
         public Task<IReadOnlyList<ProviderNewsDto>> GetNewsAsync(CancellationToken cancellationToken = default)

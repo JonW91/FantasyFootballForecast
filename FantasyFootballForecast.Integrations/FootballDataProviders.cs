@@ -123,6 +123,7 @@ public sealed class FplPublicFootballDataProvider : FootballDataProviderBase
         return fixtures.Select(fixture => new ProviderFixtureDto(
                 fixture.Id,
                 fixture.Season.ToString().GetHashCode(),
+                null,
                 fixture.Gameweek ?? 0,
                 fixture.TeamH,
                 fixture.TeamA,
@@ -287,6 +288,7 @@ public sealed class TheSportsDbFootballDataProvider : FootballDataProviderBase
             .Select(fixture => new ProviderFixtureDto(
                 ExternalId: ParseInt(fixture.IdEvent),
                 SeasonExternalId: fixture.StrSeason?.GetHashCode(StringComparison.Ordinal) ?? 0,
+                SeasonLabel: fixture.StrSeason,
                 GameweekNumber: ParseInt(fixture.IntRound, defaultValue: 0),
                 HomeTeamExternalId: ParseInt(fixture.IdHomeTeam),
                 AwayTeamExternalId: ParseInt(fixture.IdAwayTeam),

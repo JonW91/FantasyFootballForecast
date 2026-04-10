@@ -222,13 +222,19 @@ public sealed class FootballSyncService : IFootballSyncService
         {
             var homeTeam = await _db.Teams.FirstOrDefaultAsync(team => team.ExternalId == fixture.HomeTeamExternalId, cancellationToken);
             var awayTeam = await _db.Teams.FirstOrDefaultAsync(team => team.ExternalId == fixture.AwayTeamExternalId, cancellationToken);
-            var season = await _db.Seasons.FirstOrDefaultAsync(season => season.IsCurrent, cancellationToken);
-            var gameweek = await _db.Gameweeks.FirstOrDefaultAsync(gw => gw.Number == fixture.GameweekNumber && gw.SeasonId == season!.Id, cancellationToken);
 
-            if (homeTeam is null || awayTeam is null || season is null || gameweek is null)
+            if (homeTeam is null || awayTeam is null)
             {
                 continue;
             }
+
+            var season = await ResolveSeasonAsync(fixture, cancellationToken);
+            if (season is null)
+            {
+                continue;
+            }
+
+            var gameweek = await ResolveGameweekAsync(season.Id, fixture.GameweekNumber, fixture.KickoffUtc, cancellationToken);
 
             var existing = await _db.Fixtures.FirstOrDefaultAsync(f => f.ExternalId == fixture.ExternalId, cancellationToken);
             if (existing is null)
@@ -272,6 +278,110 @@ public sealed class FootballSyncService : IFootballSyncService
 
         await _db.SaveChangesAsync(cancellationToken);
         return affected;
+    }
+
+    private async Task<Season?> ResolveSeasonAsync(ProviderFixtureDto fixture, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(fixture.SeasonLabel))
+        {
+            var namedSeason = await _db.Seasons.FirstOrDefaultAsync(season => season.Name == fixture.SeasonLabel, cancellationToken);
+            if (namedSeason is not null)
+            {
+                return namedSeason;
+            }
+
+            if (TryParseSeasonYears(fixture.SeasonLabel, out var startYear, out var endYear))
+            {
+                var historicalSeason = await _db.Seasons.FirstOrDefaultAsync(season => season.StartYear == startYear && season.EndYear == endYear, cancellationToken);
+                if (historicalSeason is not null)
+                {
+                    return historicalSeason;
+                }
+
+                historicalSeason = new Season
+                {
+                    Name = fixture.SeasonLabel,
+                    StartYear = startYear,
+                    EndYear = endYear,
+                    IsCurrent = false
+                };
+                _db.Seasons.Add(historicalSeason);
+                await _db.SaveChangesAsync(cancellationToken);
+                return historicalSeason;
+            }
+        }
+
+        var currentSeason = await _db.Seasons.FirstOrDefaultAsync(season => season.IsCurrent, cancellationToken);
+        if (currentSeason is not null)
+        {
+            return currentSeason;
+        }
+
+        var fallbackSeason = new Season
+        {
+            Name = $"Season {fixture.SeasonExternalId}",
+            StartYear = DateTime.UtcNow.Year,
+            EndYear = DateTime.UtcNow.Year + 1,
+            IsCurrent = true
+        };
+        _db.Seasons.Add(fallbackSeason);
+        await _db.SaveChangesAsync(cancellationToken);
+        return fallbackSeason;
+    }
+
+    private async Task<Gameweek> ResolveGameweekAsync(int seasonId, int gameweekNumber, DateTime kickoffUtc, CancellationToken cancellationToken)
+    {
+        var existing = await _db.Gameweeks.FirstOrDefaultAsync(gw => gw.Number == gameweekNumber && gw.SeasonId == seasonId, cancellationToken);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var gameweek = new Gameweek
+        {
+            SeasonId = seasonId,
+            Number = gameweekNumber,
+            StartsUtc = kickoffUtc.Date.AddDays(-3),
+            EndsUtc = kickoffUtc.Date.AddDays(4),
+            IsCurrent = false
+        };
+        _db.Gameweeks.Add(gameweek);
+        await _db.SaveChangesAsync(cancellationToken);
+        return gameweek;
+    }
+
+    private static bool TryParseSeasonYears(string seasonLabel, out int startYear, out int endYear)
+    {
+        startYear = 0;
+        endYear = 0;
+
+        var digits = seasonLabel
+            .Split(new[] { '-', '/', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => int.TryParse(part, out var year) ? year : (int?)null)
+            .Where(year => year.HasValue)
+            .Select(year => year!.Value)
+            .ToList();
+
+        if (digits.Count >= 2)
+        {
+            startYear = digits[0];
+            endYear = digits[1] < 100 ? 2000 + digits[1] : digits[1];
+            if (endYear < startYear)
+            {
+                endYear += 1;
+            }
+
+            return true;
+        }
+
+        if (digits.Count == 1)
+        {
+            startYear = digits[0];
+            endYear = digits[0] + 1;
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<int> UpsertNewsAsync(IReadOnlyList<ProviderNewsDto> newsItems, CancellationToken cancellationToken)

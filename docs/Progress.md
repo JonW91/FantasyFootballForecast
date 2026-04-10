@@ -20,7 +20,7 @@ This document is the working tracker for project planning, delivery status, and 
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
 | API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The admin console now refreshes latest run status after each action, and the team/player detail pages now reload when the route changes. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
-| Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. TheSportsDB now contributes team, roster, historical fixture data, and player match-result history through the shared provider contract. |
+| Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. Historical fixture imports now create missing seasons and gameweeks on demand. TheSportsDB now contributes team, roster, historical fixture data, and player match-result history through the shared provider contract. |
 | Model maturity | In progress | The team trainer now preserves actual home/away fixture orientation, and the next step is adding richer features, calibration, and additional baseline models once more historical data is available. |
 
 ## Delivery Log
@@ -45,13 +45,14 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Corrected team model training to preserve home/away fixture context | Improved the feature mapping used by the team prediction model and added a training verification test. |
 | 2026-04-10 | Refreshed the admin console with latest run status after each action | Removed the need to navigate away just to see whether sync or training finished. |
 | 2026-04-10 | Fixed team and player detail pages to reload on route changes | Prevented stale detail views when navigating between entities client-side. |
+| 2026-04-10 | Made historical fixture imports create seasons and gameweeks on demand | Enabled multi-season backfill instead of collapsing historical rows into the current season. |
 
 ## Near-Term Plan
 
-1. Add broader multi-season import coverage if more retrospective data is needed.
-2. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
-3. Consider calibration and feature expansion once more historical team and player rows accumulate.
-4. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
+1. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
+2. Consider calibration and feature expansion once more historical team and player rows accumulate.
+3. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
+4. Add additional historical enrichments if more retrospective detail becomes available.
 
 ## Update Rules
 
