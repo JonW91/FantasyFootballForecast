@@ -4,17 +4,23 @@
 
 <PageTitle>Data Sync</PageTitle>
 
-<h2>Data Sync Admin</h2>
-
 <div class="panel">
+    <div class="hero-copy mb-3">
+        Trigger data sync and model training manually when you want to refresh the prototype on demand.
+    </div>
     <div class="button-row">
-        <button class="btn btn-primary" @onclick="SyncAll">Sync all providers</button>
-        <button class="btn btn-outline-light" @onclick="SyncFpl">Sync FPL</button>
-        <button class="btn btn-outline-light" @onclick="SyncTheSportsDb">Sync TheSportsDB</button>
-        <button class="btn btn-outline-light" @onclick="SyncApiFootball">Sync API-Football</button>
-        <button class="btn btn-outline-light" @onclick="RetrainAll">Retrain both models</button>
-        <button class="btn btn-outline-light" @onclick="TrainPlayers">Train player model</button>
-        <button class="btn btn-outline-light" @onclick="TrainTeams">Train team model</button>
+        <button class="btn btn-primary" disabled="@isBusy" @onclick="SyncAll">Sync all providers</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncFpl">Sync FPL</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncTheSportsDb">Sync TheSportsDB</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="SyncApiFootball">Sync API-Football</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="RetrainAll">Retrain both models</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="TrainPlayers">Train player model</button>
+        <button class="btn btn-outline-light" disabled="@isBusy" @onclick="TrainTeams">Train team model</button>
+    </div>
+
+    <div class="hero-stats mt-3">
+        <div><span>@buttonCount</span><label>Actions</label></div>
+        <div><span>@(isBusy ? "Busy" : "Ready")</span><label>Status</label></div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(message))
@@ -25,46 +31,50 @@
 
 @code {
     private string? message;
+    private bool isBusy;
+    private const int buttonCount = 7;
 
-    private async Task SyncAll()
-    {
-        var run = await Api.SyncAsync();
-        message = $"Sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
-    }
+    private Task SyncAll() => ExecuteAsync("Sync all providers", () => Api.SyncAsync());
 
-    private async Task SyncFpl()
-    {
-        var run = await Api.SyncAsync("FPL Public API");
-        message = $"FPL sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
-    }
+    private Task SyncFpl() => ExecuteAsync("Sync FPL", () => Api.SyncAsync("FPL Public API"));
 
-    private async Task SyncTheSportsDb()
-    {
-        var run = await Api.SyncAsync("TheSportsDB");
-        message = $"TheSportsDB sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
-    }
+    private Task SyncTheSportsDb() => ExecuteAsync("Sync TheSportsDB", () => Api.SyncAsync("TheSportsDB"));
 
-    private async Task SyncApiFootball()
-    {
-        var run = await Api.SyncAsync("API-Football");
-        message = $"API-Football sync completed: {run?.Status} ({run?.ItemsProcessed} items).";
-    }
+    private Task SyncApiFootball() => ExecuteAsync("Sync API-Football", () => Api.SyncAsync("API-Football"));
 
-    private async Task RetrainAll()
-    {
-        var summary = await Api.RetrainAsync();
-        message = $"Retrain completed: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
-    }
+    private Task RetrainAll() => ExecuteAsync("Retrain both models", () => Api.RetrainAsync());
 
-    private async Task TrainPlayers()
-    {
-        var summary = await Api.TrainAsync();
-        message = $"Player model: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
-    }
+    private Task TrainPlayers() => ExecuteAsync("Train player model", () => Api.TrainAsync());
 
-    private async Task TrainTeams()
+    private Task TrainTeams() => ExecuteAsync("Train team model", () => Api.TrainAsync("team"));
+
+    private async Task ExecuteAsync<T>(string actionName, Func<Task<T?>> action)
     {
-        var summary = await Api.TrainAsync("team");
-        message = $"Team model: {summary?.Status} with metric {summary?.MetricName} {summary?.MetricValue}.";
+        if (isBusy)
+        {
+            return;
+        }
+
+        isBusy = true;
+        message = $"{actionName} running...";
+
+        try
+        {
+            var result = await action();
+            message = result switch
+            {
+                DataIngestionRunDto run => $"{actionName} completed: {run.Status} ({run.ItemsProcessed} items).",
+                ModelTrainingSummaryDto summary => $"{actionName} completed: {summary.Status} with metric {summary.MetricName} {summary.MetricValue}.",
+                _ => $"{actionName} completed."
+            };
+        }
+        catch (Exception ex)
+        {
+            message = $"{actionName} failed: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 }

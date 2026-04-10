@@ -16,6 +16,7 @@ else
             <p class="eyebrow">Player detail</p>
             <h2>@detail.Player.Name</h2>
             <p class="hero-copy">@detail.Team.Name, @detail.Player.Position, squad number @detail.Player.ShirtNumber.</p>
+            <a class="btn btn-outline-light btn-sm" href="/players">Back to players</a>
         </div>
         <div class="hero-stats">
             <div><span>@detail.Player.Price</span><label>Price</label></div>
@@ -111,6 +112,15 @@ else
             }
         </article>
     </div>
+
+    <article class="panel mt-3">
+        <h3>Availability summary</h3>
+        <div class="hero-stats">
+            <div><span>@detail.CurrentAvailability.AvailabilityStatus</span><label>Status</label></div>
+            <div><span>@detail.CurrentAvailability.AvailabilityConfidence.ToString("P0", CultureInfo.InvariantCulture)</span><label>Confidence</label></div>
+            <div><span>@detail.CurrentAvailability.LastVerifiedUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</span><label>Updated</label></div>
+        </div>
+    </article>
 }
 
 @code {

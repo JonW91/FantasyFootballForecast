@@ -16,6 +16,7 @@ else
             <p class="eyebrow">Team detail</p>
             <h2>@detail.Team.Name</h2>
             <p class="hero-copy">@detail.Team.ShortName, code @detail.Team.Code. Current model-ready strength and fixture outlook for the selected club.</p>
+            <a class="btn btn-outline-light btn-sm" href="/teams">Back to teams</a>
         </div>
         <div class="hero-stats">
             <div><span>@detail.Team.StrengthRating</span><label>Strength</label></div>
@@ -42,31 +43,38 @@ else
     <div class="grid-2 mt-3">
         <article class="panel">
             <h3>Players</h3>
-            <div class="table-wrap">
-                <table class="table table-dark table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Pos</th>
-                            <th>Form</th>
-                            <th>Points</th>
-                            <th>Availability</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var player in detail.Players)
-                        {
+            @if (detail.Players.Count == 0)
+            {
+                <p>No players are loaded for this team yet.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table table-dark table-striped align-middle">
+                        <thead>
                             <tr>
-                                <td><a href="@($"/players/{player.Id}")">@player.Name</a></td>
-                                <td>@player.Position</td>
-                                <td>@player.Form</td>
-                                <td>@player.RecentPoints</td>
-                                <td><span class="badge @BadgeClass(player.AvailabilityStatus)">@player.AvailabilityStatus</span></td>
+                                <th>Player</th>
+                                <th>Pos</th>
+                                <th>Form</th>
+                                <th>Points</th>
+                                <th>Availability</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var player in detail.Players)
+                            {
+                                <tr>
+                                    <td><a href="@($"/players/{player.Id}")">@player.Name</a></td>
+                                    <td>@player.Position</td>
+                                    <td>@player.Form</td>
+                                    <td>@player.RecentPoints</td>
+                                    <td><span class="badge @BadgeClass(player.AvailabilityStatus)">@player.AvailabilityStatus</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </article>
 
         <article class="panel">
