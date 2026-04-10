@@ -15,6 +15,8 @@
         <div><span>@teamCount</span><label>Teams</label></div>
         <div><span>@playerCount</span><label>Players</label></div>
         <div><span>@fixtureCount</span><label>Fixtures</label></div>
+        <div><span>@availableCount</span><label>Available</label></div>
+        <div><span>@flaggedCount</span><label>Flagged</label></div>
     </div>
 </section>
 
@@ -77,17 +79,17 @@
 <div class="grid-2 mt-4">
     <article class="panel">
         <h3>Latest training run</h3>
-        @if (modelRuns is null)
+        @if (summary is null)
         {
             <p>Loading...</p>
         }
-        else if (modelRuns.Count == 0)
+        else if (summary.LatestModelRun is null)
         {
             <p>No training runs recorded yet.</p>
         }
         else
         {
-            var latest = modelRuns[0];
+            var latest = summary.LatestModelRun;
             <div class="list-row">
                 <span>@latest.ModelName</span>
                 <strong>@latest.Status</strong>
@@ -109,17 +111,17 @@
 
     <article class="panel">
         <h3>Latest ingestion run</h3>
-        @if (ingestionRuns is null)
+        @if (summary is null)
         {
             <p>Loading...</p>
         }
-        else if (ingestionRuns.Count == 0)
+        else if (summary.LatestIngestionRun is null)
         {
             <p>No ingestion runs recorded yet.</p>
         }
         else
         {
-            var latest = ingestionRuns[0];
+            var latest = summary.LatestIngestionRun;
             <div class="list-row">
                 <span>@latest.SourceName</span>
                 <strong>@latest.Status</strong>
@@ -146,12 +148,13 @@
     private List<FixtureDto>? fixtures;
     private List<FantasyPickDto>? topPicks;
     private List<AvailabilityDto>? availability;
-    private List<ModelTrainingRunDto>? modelRuns;
-    private List<DataIngestionRunDto>? ingestionRuns;
+    private DashboardSummaryDto? summary;
 
     private int teamCount;
     private int playerCount;
     private int fixtureCount;
+    private int availableCount;
+    private int flaggedCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,20 +163,20 @@
         var fixturesTask = Api.GetFixturesAsync(true);
         var picksTask = Api.GetTopPicksAsync(5);
         var availabilityTask = Api.GetAvailabilityAsync();
-        var modelRunsTask = Api.GetModelRunsAsync();
-        var ingestionRunsTask = Api.GetIngestionRunsAsync();
+        var summaryTask = Api.GetDashboardSummaryAsync();
 
         teams = await teamsTask ?? [];
         players = await playersTask ?? [];
         fixtures = await fixturesTask ?? [];
         topPicks = await picksTask ?? [];
         availability = await availabilityTask ?? [];
-        modelRuns = await modelRunsTask ?? [];
-        ingestionRuns = await ingestionRunsTask ?? [];
+        summary = await summaryTask;
 
-        teamCount = teams.Count;
-        playerCount = players.Count;
-        fixtureCount = fixtures.Count;
+        teamCount = summary?.TeamCount ?? teams.Count;
+        playerCount = summary?.PlayerCount ?? players.Count;
+        fixtureCount = summary?.FixtureCount ?? fixtures.Count;
+        availableCount = summary?.AvailablePlayerCount ?? availability.Count(item => item.AvailabilityStatus == AvailabilityStatus.Available);
+        flaggedCount = summary?.FlaggedPlayerCount ?? availability.Count(item => item.AvailabilityStatus != AvailabilityStatus.Available);
     }
 
     private static string BadgeClass(AvailabilityStatus status) => status switch

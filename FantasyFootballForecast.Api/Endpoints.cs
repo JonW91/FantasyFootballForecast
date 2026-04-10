@@ -538,6 +538,52 @@ public static class Endpoints
             return Results.Ok(picks);
         });
 
+        group.MapGet("/dashboard-summary", async (IApplicationDbContext db, CancellationToken cancellationToken) =>
+        {
+            var latestModelRun = await db.ModelTrainingRuns
+                .AsNoTracking()
+                .OrderByDescending(item => item.StartedUtc)
+                .Select(item => new ModelTrainingRunDto(
+                    item.Id,
+                    item.ModelName,
+                    item.StartedUtc,
+                    item.CompletedUtc,
+                    item.Status,
+                    item.TrainingSampleCount,
+                    item.EvaluationMetricName,
+                    item.EvaluationMetricValue,
+                    item.ModelPath,
+                    item.Notes))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var latestIngestionRun = await db.DataIngestionRuns
+                .AsNoTracking()
+                .OrderByDescending(item => item.StartedUtc)
+                .Select(item => new DataIngestionRunDto(
+                    item.Id,
+                    item.SourceName,
+                    item.StartedUtc,
+                    item.CompletedUtc,
+                    item.Status,
+                    item.ItemsProcessed,
+                    item.ItemsUpserted,
+                    item.ItemsSkipped,
+                    item.Notes,
+                    item.ErrorMessage))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var summary = new DashboardSummaryDto(
+                await db.Teams.AsNoTracking().CountAsync(cancellationToken),
+                await db.Players.AsNoTracking().CountAsync(cancellationToken),
+                await db.Fixtures.AsNoTracking().CountAsync(cancellationToken),
+                await db.PlayerAvailabilities.AsNoTracking().CountAsync(item => item.AvailabilityStatus == AvailabilityStatus.Available, cancellationToken),
+                await db.PlayerAvailabilities.AsNoTracking().CountAsync(item => item.AvailabilityStatus != AvailabilityStatus.Available, cancellationToken),
+                latestModelRun,
+                latestIngestionRun);
+
+            return Results.Ok(summary);
+        });
+
         group.MapPost("/sync/import", async (IFootballSyncService syncService, string? provider, CancellationToken cancellationToken) =>
         {
             var run = string.IsNullOrWhiteSpace(provider)

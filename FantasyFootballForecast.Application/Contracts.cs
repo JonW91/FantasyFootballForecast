@@ -381,6 +381,15 @@ public sealed record ModelTrainingRunDto(
     string? ModelPath,
     string? Notes);
 
+public sealed record DashboardSummaryDto(
+    int TeamCount,
+    int PlayerCount,
+    int FixtureCount,
+    int AvailablePlayerCount,
+    int FlaggedPlayerCount,
+    ModelTrainingRunDto? LatestModelRun,
+    DataIngestionRunDto? LatestIngestionRun);
+
 public sealed record DataIngestionRunDto(
     int Id,
     string SourceName,

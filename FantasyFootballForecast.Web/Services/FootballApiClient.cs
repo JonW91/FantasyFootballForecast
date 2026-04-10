@@ -48,6 +48,9 @@ public sealed class FootballApiClient
     public Task<List<FantasyPickDto>?> GetBestXiAsync(CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<List<FantasyPickDto>>("api/best-xi", cancellationToken);
 
+    public Task<DashboardSummaryDto?> GetDashboardSummaryAsync(CancellationToken cancellationToken = default)
+        => _httpClient.GetFromJsonAsync<DashboardSummaryDto>("api/dashboard-summary", cancellationToken);
+
     public Task<ModelTrainingSummaryDto?> TrainAsync(string? model = null, CancellationToken cancellationToken = default)
         => PostAsync<ModelTrainingSummaryDto>(BuildUrl("api/models/train", ("model", model)), cancellationToken);
 
