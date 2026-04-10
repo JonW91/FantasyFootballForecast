@@ -128,7 +128,7 @@ else
 
     private PlayerDetailDto? detail;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
         => detail = await Api.GetPlayerAsync(PlayerId);
 
     private static string BadgeClass(AvailabilityStatus status) => status switch

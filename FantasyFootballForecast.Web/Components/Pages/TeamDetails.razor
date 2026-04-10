@@ -120,7 +120,7 @@ else
 
     private TeamDetailDto? detail;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
         => detail = await Api.GetTeamAsync(TeamId);
 
     private static string BadgeClass(AvailabilityStatus status) => status switch
