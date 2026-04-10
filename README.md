@@ -102,6 +102,7 @@ dotnet user-secrets set "FootballProviders:TheSportsDb:ApiKey" "replace-me" --pr
 The API exposes endpoints for:
 
 - teams, players, fixtures, predictions
+- team and player detail views with recent stats, fixtures, and availability context
 - player availability and news
 - ingestion runs and model training runs
 - sync/import and model training triggers

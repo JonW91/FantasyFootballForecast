@@ -27,6 +27,136 @@ public static class Endpoints
             return Results.Ok(teams);
         });
 
+        group.MapGet("/teams/{teamId:int}", async (IApplicationDbContext db, int teamId, CancellationToken cancellationToken) =>
+        {
+            var team = await db.Teams
+                .AsNoTracking()
+                .Where(item => item.Id == teamId)
+                .Select(item => new TeamDto(
+                    item.Id,
+                    item.Name,
+                    item.ShortName,
+                    item.Code,
+                    item.StrengthRating,
+                    item.ExpectedGoalsForPerMatch,
+                    item.ExpectedGoalsAgainstPerMatch,
+                    item.CrestUrl))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (team is null)
+            {
+                return Results.NotFound();
+            }
+
+            var players = await db.Players
+                .AsNoTracking()
+                .Where(player => player.TeamId == teamId)
+                .OrderByDescending(player => player.RecentPoints)
+                .Take(15)
+                .Select(player => new PlayerDto(
+                    player.Id,
+                    player.TeamId,
+                    team.Name,
+                    player.Name,
+                    player.Position,
+                    player.ShirtNumber,
+                    player.Price,
+                    player.OwnershipPercent,
+                    player.Form,
+                    player.MinutesPlayed,
+                    player.RecentPoints,
+                    player.Goals,
+                    player.Assists,
+                    player.CleanSheets,
+                    player.AvailabilityStatus,
+                    player.ChanceOfPlayingNextRound,
+                    player.ExpectedReturnText,
+                    player.LastVerifiedUtc))
+                .ToListAsync(cancellationToken);
+
+            var upcomingFixtureRows = await db.Fixtures
+                .AsNoTracking()
+                .Where(fixture => !fixture.IsFinished && (fixture.HomeTeamId == teamId || fixture.AwayTeamId == teamId))
+                .Join(db.Teams.AsNoTracking(), fixture => fixture.HomeTeamId, homeTeam => homeTeam.Id, (fixture, homeTeam) => new { fixture, homeTeam })
+                .Join(db.Teams.AsNoTracking(), joined => joined.fixture.AwayTeamId, awayTeam => awayTeam.Id, (joined, awayTeam) => new
+                {
+                    joined.fixture.Id,
+                    joined.fixture.HomeTeamId,
+                    HomeTeamName = joined.homeTeam.Name,
+                    joined.fixture.AwayTeamId,
+                    AwayTeamName = awayTeam.Name,
+                    joined.fixture.KickoffUtc,
+                    joined.fixture.HomeScore,
+                    joined.fixture.AwayScore,
+                    joined.fixture.Venue,
+                    joined.fixture.IsFinished,
+                    joined.fixture.IsDoubleGameweek,
+                    joined.fixture.Status
+                })
+                .OrderBy(fixture => fixture.KickoffUtc)
+                .Take(5)
+                .ToListAsync(cancellationToken);
+
+            var upcomingFixtures = upcomingFixtureRows
+                .Select(item => new FixtureDto(
+                    item.Id,
+                    item.HomeTeamId,
+                    item.HomeTeamName,
+                    item.AwayTeamId,
+                    item.AwayTeamName,
+                    item.KickoffUtc,
+                    item.HomeScore,
+                    item.AwayScore,
+                    item.Venue,
+                    item.IsFinished,
+                    item.IsDoubleGameweek,
+                    item.Status))
+                .ToList();
+
+            var recentMatchStatRows = await db.TeamMatchStats
+                .AsNoTracking()
+                .Where(stat => stat.TeamId == teamId)
+                .Join(db.Fixtures.AsNoTracking(), stat => stat.FixtureId, fixture => fixture.Id, (stat, fixture) => new { stat, fixture })
+                .Join(db.Teams.AsNoTracking(), joined => joined.stat.OpponentTeamId, opponent => opponent.Id, (joined, opponent) => new
+                {
+                    joined.stat.FixtureId,
+                    joined.fixture.KickoffUtc,
+                    OpponentTeamName = opponent.Name,
+                    IsHome = joined.stat.TeamId == joined.fixture.HomeTeamId,
+                    joined.stat.GoalsFor,
+                    joined.stat.GoalsAgainst,
+                    joined.stat.ExpectedGoalsFor,
+                    joined.stat.ExpectedGoalsAgainst,
+                    joined.stat.ShotsFor,
+                    joined.stat.ShotsAgainst,
+                    joined.stat.PossessionPercent,
+                    joined.stat.HomeStrength,
+                    joined.stat.AwayStrength
+                })
+                .OrderByDescending(item => item.KickoffUtc)
+                .Take(5)
+                .ToListAsync(cancellationToken);
+
+            var recentMatchStats = recentMatchStatRows
+                .Select(item => new TeamMatchStatDto(
+                    item.FixtureId,
+                    item.KickoffUtc,
+                    item.OpponentTeamName,
+                    item.IsHome,
+                    item.GoalsFor,
+                    item.GoalsAgainst,
+                    item.ExpectedGoalsFor,
+                    item.ExpectedGoalsAgainst,
+                    item.ShotsFor,
+                    item.ShotsAgainst,
+                    item.PossessionPercent,
+                    item.HomeStrength,
+                    item.AwayStrength))
+                .ToList();
+
+            return Results.Ok(new TeamDetailDto(team, players, upcomingFixtures, recentMatchStats));
+        });
+
         group.MapGet("/players", async (
             IApplicationDbContext db,
             int? teamId,
@@ -69,6 +199,185 @@ public static class Endpoints
                 .ToListAsync(cancellationToken);
 
             return Results.Ok(players);
+        });
+
+        group.MapGet("/players/{playerId:int}", async (IApplicationDbContext db, int playerId, CancellationToken cancellationToken) =>
+        {
+            var playerEntity = await db.Players
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == playerId, cancellationToken);
+
+            if (playerEntity is null)
+            {
+                return Results.NotFound();
+            }
+
+            var team = await db.Teams
+                .AsNoTracking()
+                .Where(item => item.Id == playerEntity.TeamId)
+                .Select(item => new TeamDto(
+                    item.Id,
+                    item.Name,
+                    item.ShortName,
+                    item.Code,
+                    item.StrengthRating,
+                    item.ExpectedGoalsForPerMatch,
+                    item.ExpectedGoalsAgainstPerMatch,
+                    item.CrestUrl))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (team is null)
+            {
+                return Results.NotFound();
+            }
+
+            var player = new PlayerDto(
+                playerEntity.Id,
+                playerEntity.TeamId,
+                team.Name,
+                playerEntity.Name,
+                playerEntity.Position,
+                playerEntity.ShirtNumber,
+                playerEntity.Price,
+                playerEntity.OwnershipPercent,
+                playerEntity.Form,
+                playerEntity.MinutesPlayed,
+                playerEntity.RecentPoints,
+                playerEntity.Goals,
+                playerEntity.Assists,
+                playerEntity.CleanSheets,
+                playerEntity.AvailabilityStatus,
+                playerEntity.ChanceOfPlayingNextRound,
+                playerEntity.ExpectedReturnText,
+                playerEntity.LastVerifiedUtc);
+            var playerTeamId = player.TeamId;
+
+            var availability = await db.PlayerAvailabilities
+                .AsNoTracking()
+                .Where(item => item.PlayerId == playerId)
+                .OrderByDescending(item => item.LastVerifiedUtc)
+                .Select(item => new AvailabilityDto(
+                    playerId,
+                    player.Name,
+                    team.Name,
+                    item.AvailabilityStatus,
+                    item.InjuryFlag,
+                    item.SuspensionFlag,
+                    item.ChanceOfPlayingNextRound,
+                    item.ExpectedReturnText,
+                    item.AvailabilityConfidence,
+                    item.SourceName,
+                    item.SourceUrl,
+                    item.LastVerifiedUtc))
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? new AvailabilityDto(
+                    player.Id,
+                    player.Name,
+                    team.Name,
+                    player.AvailabilityStatus,
+                    player.AvailabilityStatus is AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.LateFitnessTest,
+                    player.AvailabilityStatus == AvailabilityStatus.Suspended,
+                    player.ChanceOfPlayingNextRound,
+                    player.ExpectedReturnText,
+                    player.ChanceOfPlayingNextRound,
+                    "Player record",
+                    null,
+                    player.LastVerifiedUtc ?? DateTime.UtcNow);
+
+            var recentMatchStatRows = await db.PlayerMatchStats
+                .AsNoTracking()
+                .Where(stat => stat.PlayerId == playerId)
+                .Join(db.Fixtures.AsNoTracking(), stat => stat.FixtureId, fixture => fixture.Id, (stat, fixture) => new { stat, fixture })
+                .Join(db.Teams.AsNoTracking(), joined => joined.fixture.HomeTeamId, homeTeam => homeTeam.Id, (joined, homeTeam) => new { joined.stat, joined.fixture, homeTeam })
+                .Join(db.Teams.AsNoTracking(), joined => joined.fixture.AwayTeamId, awayTeam => awayTeam.Id, (joined, awayTeam) => new
+                {
+                    joined.stat.FixtureId,
+                    joined.fixture.KickoffUtc,
+                    OpponentTeamName = joined.fixture.HomeTeamId == playerTeamId ? awayTeam.Name : joined.homeTeam.Name,
+                    IsHome = joined.fixture.HomeTeamId == playerTeamId,
+                    joined.stat.MinutesPlayed,
+                    joined.stat.Goals,
+                    joined.stat.Assists,
+                    joined.stat.CleanSheets,
+                    joined.stat.Saves,
+                    joined.stat.BonusPoints,
+                    joined.stat.GoalsConceded,
+                    joined.stat.YellowCards,
+                    joined.stat.RedCards,
+                    joined.stat.FantasyPoints,
+                    joined.stat.OpponentStrength,
+                    joined.stat.RollingForm,
+                    joined.stat.PriceAtKickoff
+                })
+                .OrderByDescending(item => item.KickoffUtc)
+                .Take(5)
+                .ToListAsync(cancellationToken);
+
+            var recentMatchStats = recentMatchStatRows
+                .Select(item => new PlayerMatchStatDto(
+                    item.FixtureId,
+                    item.KickoffUtc,
+                    item.OpponentTeamName,
+                    item.IsHome,
+                    item.MinutesPlayed,
+                    item.Goals,
+                    item.Assists,
+                    item.CleanSheets,
+                    item.Saves,
+                    item.BonusPoints,
+                    item.GoalsConceded,
+                    item.YellowCards,
+                    item.RedCards,
+                    item.FantasyPoints,
+                    item.OpponentStrength,
+                    item.RollingForm,
+                    item.PriceAtKickoff))
+                .ToList();
+
+            var recentNews = await db.NewsItems
+                .AsNoTracking()
+                .Where(item => item.PlayerId == playerId)
+                .OrderByDescending(item => item.PublishedUtc)
+                .Take(5)
+                .Select(item => new NewsItemDto(
+                    item.Id,
+                    item.PublishedUtc,
+                    item.Title,
+                    item.Summary,
+                    item.SourceName,
+                    item.SourceUrl,
+                    item.SentimentScore,
+                    item.InjuryFlag,
+                    item.SuspensionFlag,
+                    item.AvailableFlag,
+                    item.Confidence,
+                    item.ExtractedAvailabilityStatus))
+                .ToListAsync(cancellationToken);
+
+            var recentPredictions = await db.Predictions
+                .AsNoTracking()
+                .Where(item => item.PlayerId == playerId)
+                .OrderByDescending(item => item.CreatedUtc)
+                .Take(3)
+                .Select(item => new PredictionDto(
+                    item.Id,
+                    item.PredictionKind,
+                    item.FixtureId,
+                    item.PlayerId,
+                    item.TeamId,
+                    item.GameweekId,
+                    item.CreatedUtc,
+                    item.ModelVersion,
+                    item.Score,
+                    item.Probability,
+                    item.PredictedValue,
+                    item.LowerBound,
+                    item.UpperBound,
+                    item.Explanation,
+                    item.EvaluationMetric))
+                .ToListAsync(cancellationToken);
+
+            return Results.Ok(new PlayerDetailDto(player, team, availability, recentMatchStats, recentNews, recentPredictions));
         });
 
         group.MapGet("/fixtures", async (IApplicationDbContext db, bool? upcomingOnly, CancellationToken cancellationToken) =>

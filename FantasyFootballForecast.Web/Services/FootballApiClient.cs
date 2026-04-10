@@ -15,8 +15,14 @@ public sealed class FootballApiClient
     public Task<List<TeamDto>?> GetTeamsAsync(CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<List<TeamDto>>("api/teams", cancellationToken);
 
+    public Task<TeamDetailDto?> GetTeamAsync(int teamId, CancellationToken cancellationToken = default)
+        => _httpClient.GetFromJsonAsync<TeamDetailDto>($"api/teams/{teamId}", cancellationToken);
+
     public Task<List<PlayerDto>?> GetPlayersAsync(string? search = null, int? teamId = null, CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<List<PlayerDto>>(BuildUrl("api/players", ("search", search), ("teamId", teamId?.ToString())), cancellationToken);
+
+    public Task<PlayerDetailDto?> GetPlayerAsync(int playerId, CancellationToken cancellationToken = default)
+        => _httpClient.GetFromJsonAsync<PlayerDetailDto>($"api/players/{playerId}", cancellationToken);
 
     public Task<List<FixtureDto>?> GetFixturesAsync(bool upcomingOnly = false, CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<List<FixtureDto>>(BuildUrl("api/fixtures", ("upcomingOnly", upcomingOnly ? "true" : null)), cancellationToken);

@@ -5,54 +5,121 @@
 
 <PageTitle>Team Details</PageTitle>
 
-@if (team is null)
+@if (detail is null)
 {
     <p>Loading...</p>
 }
 else
 {
-    <h2>@team.Name</h2>
+    <section class="hero">
+        <div>
+            <p class="eyebrow">Team detail</p>
+            <h2>@detail.Team.Name</h2>
+            <p class="hero-copy">@detail.Team.ShortName, code @detail.Team.Code. Current model-ready strength and fixture outlook for the selected club.</p>
+        </div>
+        <div class="hero-stats">
+            <div><span>@detail.Team.StrengthRating</span><label>Strength</label></div>
+            <div><span>@detail.Team.ExpectedGoalsForPerMatch.ToString("F2")</span><label>xG For</label></div>
+            <div><span>@detail.Team.ExpectedGoalsAgainstPerMatch.ToString("F2")</span><label>xG Against</label></div>
+        </div>
+    </section>
+
     <div class="grid-3">
-        <article class="panel"><strong>Strength</strong><p>@team.StrengthRating</p></article>
-        <article class="panel"><strong>xG For</strong><p>@team.ExpectedGoalsForPerMatch</p></article>
-        <article class="panel"><strong>xG Against</strong><p>@team.ExpectedGoalsAgainstPerMatch</p></article>
+        <article class="panel">
+            <h3>Squad depth</h3>
+            <p>@detail.Players.Count players loaded for this team.</p>
+        </article>
+        <article class="panel">
+            <h3>Upcoming fixtures</h3>
+            <p>@detail.UpcomingFixtures.Count scheduled fixtures in the local window.</p>
+        </article>
+        <article class="panel">
+            <h3>Recent matches</h3>
+            <p>@detail.RecentMatchStats.Count recent team match rows available for modelling.</p>
+        </article>
     </div>
 
-    <div class="panel">
-        <h3>Players</h3>
-        @foreach (var player in players.Where(player => player.TeamId == TeamId))
-        {
-            <div class="list-row">
-                <a href="@($"players/{player.Id}")">@player.Name</a>
-                <strong>@player.Position</strong>
+    <div class="grid-2 mt-3">
+        <article class="panel">
+            <h3>Players</h3>
+            <div class="table-wrap">
+                <table class="table table-dark table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Pos</th>
+                            <th>Form</th>
+                            <th>Points</th>
+                            <th>Availability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var player in detail.Players)
+                        {
+                            <tr>
+                                <td><a href="@($"/players/{player.Id}")">@player.Name</a></td>
+                                <td>@player.Position</td>
+                                <td>@player.Form</td>
+                                <td>@player.RecentPoints</td>
+                                <td><span class="badge @BadgeClass(player.AvailabilityStatus)">@player.AvailabilityStatus</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-        }
+        </article>
+
+        <article class="panel">
+            <h3>Upcoming fixtures</h3>
+            @if (detail.UpcomingFixtures.Count == 0)
+            {
+                <p>No upcoming fixtures in the current sample data.</p>
+            }
+            else
+            {
+                @foreach (var fixture in detail.UpcomingFixtures)
+                {
+                    <div class="list-row">
+                        <span>@fixture.HomeTeamName vs @fixture.AwayTeamName</span>
+                        <strong>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</strong>
+                    </div>
+                }
+            }
+        </article>
     </div>
 
-    <div class="panel mt-3">
-        <h3>Upcoming fixtures</h3>
-        @foreach (var fixture in fixtures.Where(fixture => fixture.HomeTeamId == TeamId || fixture.AwayTeamId == TeamId).Take(5))
+    <article class="panel mt-3">
+        <h3>Recent match trend</h3>
+        @if (detail.RecentMatchStats.Count == 0)
         {
-            <div class="list-row">
-                <span>@fixture.HomeTeamName vs @fixture.AwayTeamName</span>
-                <strong>@fixture.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</strong>
-            </div>
+            <p>No recent match stats available yet.</p>
         }
-    </div>
+        else
+        {
+            @foreach (var stat in detail.RecentMatchStats)
+            {
+                <div class="list-row">
+                    <span>@(stat.IsHome ? "Home" : "Away") vs @stat.OpponentTeamName</span>
+                    <strong>@stat.GoalsFor-@stat.GoalsAgainst | xG @stat.ExpectedGoalsFor.ToString("F2")-@stat.ExpectedGoalsAgainst.ToString("F2") | Poss @stat.PossessionPercent.ToString("F0")%</strong>
+                </div>
+            }
+        }
+    </article>
 }
 
 @code {
     [Parameter] public int TeamId { get; set; }
 
-    private TeamDto? team;
-    private List<PlayerDto> players = [];
-    private List<FixtureDto> fixtures = [];
+    private TeamDetailDto? detail;
 
     protected override async Task OnInitializedAsync()
+        => detail = await Api.GetTeamAsync(TeamId);
+
+    private static string BadgeClass(AvailabilityStatus status) => status switch
     {
-        var teams = await Api.GetTeamsAsync() ?? [];
-        team = teams.FirstOrDefault(team => team.Id == TeamId);
-        players = await Api.GetPlayersAsync(teamId: TeamId) ?? [];
-        fixtures = await Api.GetFixturesAsync(true) ?? [];
-    }
+        AvailabilityStatus.Available => "badge-good",
+        AvailabilityStatus.Doubtful => "badge-warning",
+        AvailabilityStatus.Injured or AvailabilityStatus.RuledOut or AvailabilityStatus.Suspended => "badge-bad",
+        _ => "badge-neutral"
+    };
 }

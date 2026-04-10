@@ -254,6 +254,40 @@ public sealed record FixtureDto(
     bool IsDoubleGameweek,
     string? Status);
 
+public sealed record TeamMatchStatDto(
+    int FixtureId,
+    DateTime KickoffUtc,
+    string OpponentTeamName,
+    bool IsHome,
+    int GoalsFor,
+    int GoalsAgainst,
+    decimal ExpectedGoalsFor,
+    decimal ExpectedGoalsAgainst,
+    decimal ShotsFor,
+    decimal ShotsAgainst,
+    decimal PossessionPercent,
+    decimal HomeStrength,
+    decimal AwayStrength);
+
+public sealed record PlayerMatchStatDto(
+    int FixtureId,
+    DateTime KickoffUtc,
+    string OpponentTeamName,
+    bool IsHome,
+    int MinutesPlayed,
+    int Goals,
+    int Assists,
+    int CleanSheets,
+    int Saves,
+    int BonusPoints,
+    int GoalsConceded,
+    int YellowCards,
+    int RedCards,
+    decimal FantasyPoints,
+    decimal OpponentStrength,
+    decimal RollingForm,
+    decimal PriceAtKickoff);
+
 public sealed record AvailabilityDto(
     int PlayerId,
     string PlayerName,
@@ -281,6 +315,20 @@ public sealed record NewsItemDto(
     bool AvailableFlag,
     decimal Confidence,
     AvailabilityStatus ExtractedAvailabilityStatus);
+
+public sealed record TeamDetailDto(
+    TeamDto Team,
+    IReadOnlyList<PlayerDto> Players,
+    IReadOnlyList<FixtureDto> UpcomingFixtures,
+    IReadOnlyList<TeamMatchStatDto> RecentMatchStats);
+
+public sealed record PlayerDetailDto(
+    PlayerDto Player,
+    TeamDto Team,
+    AvailabilityDto CurrentAvailability,
+    IReadOnlyList<PlayerMatchStatDto> RecentMatchStats,
+    IReadOnlyList<NewsItemDto> RecentNews,
+    IReadOnlyList<PredictionDto> RecentPredictions);
 
 public sealed record PredictionDto(
     int Id,

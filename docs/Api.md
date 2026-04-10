@@ -8,9 +8,17 @@ Base route: `/api`
 
 - Returns teams ordered by name.
 
+`GET /api/teams/{teamId}`
+
+- Returns a team detail payload with squad, fixtures, and recent match stats.
+
 `GET /api/players?search={text}&teamId={id}`
 
 - Returns players filtered by optional search text and team.
+
+`GET /api/players/{playerId}`
+
+- Returns a player detail payload with team context, availability, news, predictions, and recent match log.
 
 `GET /api/fixtures?upcomingOnly=true`
 
