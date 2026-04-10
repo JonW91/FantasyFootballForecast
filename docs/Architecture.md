@@ -41,6 +41,7 @@ The current runtime topology is:
 6. The API exposes persisted data and prediction results.
 7. ML services train from persisted historical rows and write training-run metadata.
 8. The Web app reads API endpoints and renders dashboards and admin workflows.
+9. The home page consumes a consolidated dashboard summary endpoint so the main control panel can show counts and the latest run state without assembling multiple requests itself.
 
 ## Provider Strategy
 

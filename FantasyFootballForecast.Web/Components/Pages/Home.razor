@@ -159,8 +159,6 @@
 </div>
 
 @code {
-    private List<TeamDto>? teams;
-    private List<PlayerDto>? players;
     private List<FixtureDto>? fixtures;
     private List<FantasyPickDto>? topPicks;
     private List<AvailabilityDto>? availability;
@@ -174,22 +172,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var teamsTask = Api.GetTeamsAsync();
-        var playersTask = Api.GetPlayersAsync();
         var fixturesTask = Api.GetFixturesAsync(true);
         var picksTask = Api.GetTopPicksAsync(5);
         var availabilityTask = Api.GetAvailabilityAsync();
         var summaryTask = Api.GetDashboardSummaryAsync();
 
-        teams = await teamsTask ?? [];
-        players = await playersTask ?? [];
         fixtures = await fixturesTask ?? [];
         topPicks = await picksTask ?? [];
         availability = await availabilityTask ?? [];
         summary = await summaryTask;
 
-        teamCount = summary?.TeamCount ?? teams.Count;
-        playerCount = summary?.PlayerCount ?? players.Count;
+        teamCount = summary?.TeamCount ?? 0;
+        playerCount = summary?.PlayerCount ?? 0;
         fixtureCount = summary?.FixtureCount ?? fixtures.Count;
         availableCount = summary?.AvailablePlayerCount ?? availability.Count(item => item.AvailabilityStatus == AvailabilityStatus.Available);
         flaggedCount = summary?.FlaggedPlayerCount ?? availability.Count(item => item.AvailabilityStatus != AvailabilityStatus.Available);

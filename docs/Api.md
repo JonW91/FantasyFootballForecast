@@ -52,6 +52,10 @@ Base route: `/api`
 
 - Returns a simple best-XI prototype based on current recommendations.
 
+`GET /api/dashboard-summary`
+
+- Returns the home-page summary payload with counts plus the latest model and ingestion runs.
+
 ## Mutation / Admin Endpoints
 
 `POST /api/sync/import`
@@ -90,3 +94,4 @@ Supported provider names in the current build:
 - Health endpoints are added through ServiceDefaults and `MapDefaultEndpoints()`.
 - The API seeds and initializes the local database on startup if needed.
 - Query shape is intentionally simple for local development and can be expanded into paginated read models later.
+- The dashboard uses `GET /api/dashboard-summary` to keep the home page aligned with the latest seeded and operational state.

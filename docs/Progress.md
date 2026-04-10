@@ -19,7 +19,7 @@ This document is the working tracker for project planning, delivery status, and 
 | --- | --- | --- |
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
-| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. Template scaffold pages have been removed. |
+| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
 | Historical data depth | Next | Expand fixture and player match-history ingestion beyond the current baseline. |
 | Model maturity | Next | Add richer features, calibration, and additional baseline models once more historical data is available. |
 
@@ -37,6 +37,8 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Added a dashboard summary API and reused it on the home page | Consolidated the main dashboard read model and reduced dashboard-specific fetch chatter. |
 | 2026-04-10 | Added integration coverage for the dashboard summary endpoint | Confirmed the new consolidated read model stays populated against seeded data. |
 | 2026-04-10 | Added quick navigation links to the dashboard | Made the main prototype workflows directly reachable from the home page. |
+| 2026-04-10 | Updated API and architecture docs for the dashboard summary endpoint | Kept the documentation aligned with the new consolidated read model. |
+| 2026-04-10 | Removed redundant team and player fetches from the home page | Simplified the dashboard load path so the app leans on the consolidated summary read model. |
 
 ## Near-Term Plan
 
