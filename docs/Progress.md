@@ -50,14 +50,14 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-11 | Added position-aware Best XI selection (4-4-2) | Replaced unconstrained top-11 with a proper GK/DEF/MID/FWD squad composition. |
 | 2026-04-11 | Added fixture difficulty rating (FDR) endpoint and Picks page panel | Surfaces upcoming fixture difficulty (1–5 scale, home advantage factored in) through the API and alongside the top-picks view. |
 | 2026-04-11 | Added position filter to the Players browse page | Lets the operator narrow the player list by GK, DEF, MID, or FWD without a search term. |
+| 2026-04-11 | Incorporated FDR into recommendation scoring | Top picks and Best XI now apply a multiplier based on upcoming fixture difficulty so easier fixtures surface higher in the rankings. |
 
 ## Near-Term Plan
 
-1. Incorporate FDR scores into the recommendation scoring so picks favour players with easier upcoming fixtures.
-2. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
-3. Consider calibration and feature expansion once more historical team and player rows accumulate.
-4. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
-5. Add additional historical enrichments if more retrospective detail becomes available.
+1. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
+2. Consider calibration and feature expansion once more historical team and player rows accumulate.
+3. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
+4. Add additional historical enrichments if more retrospective detail becomes available.
 
 ## Update Rules
 

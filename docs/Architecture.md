@@ -88,6 +88,8 @@ Both models:
 - persist metrics and run records to SQL Server
 - can be retrained manually or by the worker
 
+The recommendation service builds a fixture difficulty rating (FDR) per team from upcoming fixtures and applies it as a multiplier when scoring candidates. Easier fixtures boost predicted points, tougher fixtures reduce them, so picks naturally surface players with favourable upcoming games.
+
 ## Extension Points
 
 Recommended next engineering slices:

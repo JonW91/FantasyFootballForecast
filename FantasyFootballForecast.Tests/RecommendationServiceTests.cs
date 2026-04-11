@@ -58,6 +58,33 @@ public sealed class RecommendationServiceTests
         Assert.That(result.Count, Is.LessThanOrEqualTo(3));
     }
 
+    [Test]
+    public async Task GetTopPicksAsync_WithEasyFixture_BoostsPredictedPoints()
+    {
+        await using var db = CreateDbWithFixtures(opponentStrength: 50, isHome: true);
+        var service = new FantasyRecommendationService(db);
+
+        var picks = await service.GetTopPicksAsync(5);
+        var withEasyFixture = picks.FirstOrDefault();
+
+        Assert.That(withEasyFixture, Is.Not.Null);
+        // FDR 1 (opponent strength 50, home) → 10% bonus applied
+        Assert.That(withEasyFixture!.RecommendationReason, Does.Contain("fixture").IgnoreCase);
+    }
+
+    [Test]
+    public async Task GetTopPicksAsync_WithHardFixture_ReducesPredictedPoints()
+    {
+        await using var db = CreateDbWithFixtures(opponentStrength: 95, isHome: false);
+        var service = new FantasyRecommendationService(db);
+
+        var picks = await service.GetTopPicksAsync(5);
+        var withHardFixture = picks.FirstOrDefault();
+
+        Assert.That(withHardFixture, Is.Not.Null);
+        Assert.That(withHardFixture!.RecommendationReason, Does.Contain("fixture").IgnoreCase);
+    }
+
     private static FantasyFootballForecastDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<FantasyFootballForecastDbContext>()
@@ -101,6 +128,39 @@ public sealed class RecommendationServiceTests
 
         db.Players.AddRange(players);
         db.SaveChanges();
+        return db;
+    }
+
+    private static FantasyFootballForecastDbContext CreateDbWithFixtures(decimal opponentStrength, bool isHome)
+    {
+        var options = new DbContextOptionsBuilder<FantasyFootballForecastDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        var db = new FantasyFootballForecastDbContext(options);
+
+        var myTeam = new Team { Name = "My Team", ShortName = "MYT", Code = "MYT", StrengthRating = 80 };
+        var opponent = new Team { Name = "Opponent", ShortName = "OPP", Code = "OPP", StrengthRating = opponentStrength };
+        db.Teams.Add(myTeam);
+        db.Teams.Add(opponent);
+        db.SaveChanges();
+
+        db.Players.Add(new Player { TeamId = myTeam.Id, Name = "Star Player", Position = "MID", Price = 10m, RecentPoints = 30, Goals = 5, Assists = 3, Form = 7, ShirtNumber = 10 });
+        db.SaveChanges();
+
+        var season = new Season { Name = "2025/26", StartYear = 2025, EndYear = 2026, IsCurrent = true };
+        db.Seasons.Add(season);
+        db.SaveChanges();
+        var gameweek = new Gameweek { SeasonId = season.Id, Number = 35, StartsUtc = DateTime.UtcNow, EndsUtc = DateTime.UtcNow.AddDays(7) };
+        db.Gameweeks.Add(gameweek);
+        db.SaveChanges();
+
+        var fixture = isHome
+            ? new Fixture { SeasonId = season.Id, GameweekId = gameweek.Id, HomeTeamId = myTeam.Id, AwayTeamId = opponent.Id, KickoffUtc = DateTime.UtcNow.AddDays(3), IsFinished = false }
+            : new Fixture { SeasonId = season.Id, GameweekId = gameweek.Id, HomeTeamId = opponent.Id, AwayTeamId = myTeam.Id, KickoffUtc = DateTime.UtcNow.AddDays(3), IsFinished = false };
+        db.Fixtures.Add(fixture);
+        db.SaveChanges();
+
         return db;
     }
 }
