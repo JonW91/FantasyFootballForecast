@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="docs/Api.md" />
+    <File Path="docs/Architecture.md" />
+    <File Path="docs/Operations.md" />
+    <File Path="docs/Progress.md" />
+  </Folder>
   <Project Path="FantasyFootballForecast.Api/FantasyFootballForecast.Api.csproj" />
   <Project Path="FantasyFootballForecast.AppHost/FantasyFootballForecast.AppHost.csproj" />
   <Project Path="FantasyFootballForecast.Application/FantasyFootballForecast.Application.csproj" />

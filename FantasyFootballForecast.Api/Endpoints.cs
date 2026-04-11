@@ -617,6 +617,76 @@ public static class Endpoints
             return Results.Ok(summary);
         });
 
+        group.MapGet("/fixture-difficulty", async (IApplicationDbContext db, int? teamId, CancellationToken cancellationToken) =>
+        {
+            var query = db.Fixtures
+                .AsNoTracking()
+                .Where(fixture => !fixture.IsFinished)
+                .Join(db.Teams.AsNoTracking(), fixture => fixture.HomeTeamId, home => home.Id, (fixture, home) => new { fixture, home })
+                .Join(db.Teams.AsNoTracking(), joined => joined.fixture.AwayTeamId, away => away.Id, (joined, away) => new
+                {
+                    joined.fixture,
+                    joined.home,
+                    away
+                });
+
+            if (teamId is not null)
+            {
+                query = query.Where(item => item.fixture.HomeTeamId == teamId || item.fixture.AwayTeamId == teamId);
+            }
+
+            var rows = await query
+                .OrderBy(item => item.fixture.KickoffUtc)
+                .ToListAsync(cancellationToken);
+
+            var result = new List<FixtureDifficultyDto>(rows.Count * 2);
+            foreach (var row in rows)
+            {
+                result.Add(new FixtureDifficultyDto(
+                    row.fixture.Id,
+                    row.home.Id,
+                    row.home.Name,
+                    row.away.Id,
+                    row.away.Name,
+                    row.fixture.KickoffUtc,
+                    IsHome: true,
+                    CalculateDifficulty(row.away.StrengthRating, isHome: true),
+                    row.away.StrengthRating));
+
+                result.Add(new FixtureDifficultyDto(
+                    row.fixture.Id,
+                    row.away.Id,
+                    row.away.Name,
+                    row.home.Id,
+                    row.home.Name,
+                    row.fixture.KickoffUtc,
+                    IsHome: false,
+                    CalculateDifficulty(row.home.StrengthRating, isHome: false),
+                    row.home.StrengthRating));
+            }
+
+            if (teamId is not null)
+            {
+                result = result.Where(item => item.TeamId == teamId).ToList();
+            }
+
+            return Results.Ok(result.OrderBy(item => item.KickoffUtc).ThenBy(item => item.TeamName).ToList());
+        });
+
         return group;
+    }
+
+    private static int CalculateDifficulty(decimal opponentStrength, bool isHome)
+    {
+        var baseDifficulty = opponentStrength switch
+        {
+            < 60 => 1,
+            < 70 => 2,
+            < 80 => 3,
+            < 90 => 4,
+            _ => 5
+        };
+        var modifier = isHome ? -1 : 1;
+        return Math.Clamp(baseDifficulty + modifier, 1, 5);
     }
 }

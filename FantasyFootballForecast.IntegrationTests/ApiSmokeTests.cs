@@ -68,6 +68,22 @@ public sealed class ApiSmokeTests
         Assert.That(summary.LatestIngestionRun, Is.Not.Null);
     }
 
+    [Test]
+    public async Task GetFixtureDifficulty_ReturnsRows()
+    {
+        await using var factory = new ApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/fixture-difficulty");
+
+        Assert.That(response.IsSuccessStatusCode, Is.True);
+
+        var rows = await response.Content.ReadFromJsonAsync<List<FixtureDifficultyDto>>();
+        Assert.That(rows, Is.Not.Null);
+        Assert.That(rows!.Count, Is.GreaterThan(0));
+        Assert.That(rows.All(row => row.Difficulty is >= 1 and <= 5), Is.True);
+    }
+
     private sealed class ApiFactory : WebApplicationFactory<Program>
     {
     }

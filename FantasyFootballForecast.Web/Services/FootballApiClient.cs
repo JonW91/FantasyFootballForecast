@@ -48,6 +48,9 @@ public sealed class FootballApiClient
     public Task<List<FantasyPickDto>?> GetBestXiAsync(CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<List<FantasyPickDto>>("api/best-xi", cancellationToken);
 
+    public Task<List<FixtureDifficultyDto>?> GetFixtureDifficultyAsync(int? teamId = null, CancellationToken cancellationToken = default)
+        => _httpClient.GetFromJsonAsync<List<FixtureDifficultyDto>>(BuildUrl("api/fixture-difficulty", ("teamId", teamId?.ToString())), cancellationToken);
+
     public Task<DashboardSummaryDto?> GetDashboardSummaryAsync(CancellationToken cancellationToken = default)
         => _httpClient.GetFromJsonAsync<DashboardSummaryDto>("api/dashboard-summary", cancellationToken);
 

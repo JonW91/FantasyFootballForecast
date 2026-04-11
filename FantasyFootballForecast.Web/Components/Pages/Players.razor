@@ -9,10 +9,19 @@
         Search the player pool, compare form and value, and jump into player detail views.
     </div>
     <div class="row g-2 mb-3">
-        <div class="col-md-6">
+        <div class="col-md-5">
             <input class="form-control" placeholder="Search players" @bind="search" @bind:event="oninput" />
         </div>
         <div class="col-md-3">
+            <select class="form-select" @bind="positionFilter">
+                <option value="">All positions</option>
+                <option value="GK">GK</option>
+                <option value="DEF">DEF</option>
+                <option value="MID">MID</option>
+                <option value="FWD">FWD</option>
+            </select>
+        </div>
+        <div class="col-md-2">
             <select class="form-select" @bind="sortMode">
                 <option value="form">Recent form</option>
                 <option value="points">Recent points</option>
@@ -32,6 +41,7 @@
         <div class="hero-stats mb-3">
             <div><span>@players.Count</span><label>Loaded</label></div>
             <div><span>@visiblePlayers.Count</span><label>Visible</label></div>
+            <div><span>@(string.IsNullOrEmpty(positionFilter) ? "All" : positionFilter)</span><label>Position</label></div>
             <div><span>@SortLabel(sortMode)</span><label>Sort</label></div>
         </div>
 
@@ -77,6 +87,7 @@
 @code {
     private List<PlayerDto>? players;
     private string search = string.Empty;
+    private string positionFilter = string.Empty;
     private string sortMode = "form";
 
     protected override async Task OnInitializedAsync()
@@ -91,6 +102,11 @@
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(player => player.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || player.TeamName.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(positionFilter))
+            {
+                query = query.Where(player => player.Position.Equals(positionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             return sortMode switch

@@ -50,7 +50,13 @@ Base route: `/api`
 
 `GET /api/best-xi`
 
-- Returns a simple best-XI prototype based on current recommendations.
+- Returns a position-aware best-XI prototype (1 GK, 4 DEF, 4 MID, 2 FWD) based on current recommendations.
+
+`GET /api/fixture-difficulty?teamId={id}`
+
+- Returns upcoming fixture difficulty rows on a 1 (easiest) to 5 (hardest) scale.
+- Each row is from a single team's perspective with home/away context factored in.
+- Optional `teamId` filter restricts results to a single team's fixtures.
 
 `GET /api/dashboard-summary`
 

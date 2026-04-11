@@ -412,3 +412,14 @@ public sealed record ModelTrainingSummaryDto(
     decimal MetricValue,
     string? ModelPath,
     string? Notes);
+
+public sealed record FixtureDifficultyDto(
+    int FixtureId,
+    int TeamId,
+    string TeamName,
+    int OpponentTeamId,
+    string OpponentTeamName,
+    DateTime KickoffUtc,
+    bool IsHome,
+    int Difficulty,
+    decimal OpponentStrength);

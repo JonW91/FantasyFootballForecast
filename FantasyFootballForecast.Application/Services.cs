@@ -99,7 +99,37 @@ public sealed class FantasyRecommendationService : IFantasyRecommendationService
 
     public async Task<IReadOnlyList<FantasyPickDto>> GetBestXIAsync(CancellationToken cancellationToken = default)
     {
-        return await GetTopPicksAsync(11, cancellationToken);
+        var allRows = _db.Players
+            .Join(_db.Teams,
+                player => player.TeamId,
+                team => team.Id,
+                (player, team) => new { player, team })
+            .OrderByDescending(joined => joined.player.RecentPoints + joined.player.Goals * 4 + joined.player.Assists * 3 - joined.player.RedCards * 3)
+            .ToList();
+
+        var selected = new List<FantasyPickDto>(11);
+
+        foreach (var (position, slots) in new[] { ("GK", 1), ("DEF", 4), ("MID", 4), ("FWD", 2) })
+        {
+            var picks = allRows
+                .Where(joined => joined.player.Position.Equals(position, StringComparison.OrdinalIgnoreCase))
+                .Take(slots)
+                .Select(joined => new FantasyPickDto(
+                    joined.player.Id,
+                    joined.player.Name,
+                    joined.team.Name,
+                    joined.player.Position,
+                    Math.Round(joined.player.RecentPoints + joined.player.Goals * 4 + joined.player.Assists * 3, 2),
+                    joined.player.Price,
+                    joined.player.Price == 0 ? 0 : Math.Round((joined.player.RecentPoints + 1) / joined.player.Price, 2),
+                    joined.player.ChanceOfPlayingNextRound,
+                    joined.player.AvailabilityStatus == AvailabilityStatus.Injured || joined.player.AvailabilityStatus == AvailabilityStatus.RuledOut,
+                    joined.player.AvailabilityStatus == AvailabilityStatus.Suspended,
+                    BuildReason(joined.player)));
+            selected.AddRange(picks);
+        }
+
+        return await Task.FromResult(selected);
     }
 
     private static string BuildReason(Domain.Player player)

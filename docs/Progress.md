@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-04-10
+Last updated: 2026-04-11
 
 ## Purpose
 
@@ -19,9 +19,9 @@ This document is the working tracker for project planning, delivery status, and 
 | --- | --- | --- |
 | Solution foundation | Done | Aspire orchestration, layered solution structure, and core documentation are in place. |
 | Live football sync | In progress | Public FPL ingestion is wired up; external provider adapters still need fuller implementation. |
-| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The admin console now refreshes latest run status after each action, the model page can retrain and refresh directly, and the team/player detail pages now reload when the route changes. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. |
+| API and UI surface | In progress | Core read and admin surfaces exist, and the dashboard plus list views now surface operational state, filtered counts, empty states, actionable controls, a consolidated summary read model, and quick navigation in the shell. The admin console now refreshes latest run status after each action, the model page can retrain and refresh directly, and the team/player detail pages now reload when the route changes. The home page now relies on the summary endpoint instead of separate team and player fetches. Template scaffold pages have been removed. The players browse page now supports position filtering. The picks page now shows a fixture difficulty table alongside recommendations. |
 | Historical data depth | In progress | Historical backfill is now explicit in the admin console, and the pipeline can focus on fixtures plus player match history without the live-news refresh path. Historical fixture imports now create missing seasons and gameweeks on demand. TheSportsDB now contributes team, roster, historical fixture data, and player match-result history through the shared provider contract. |
-| Model maturity | In progress | The team trainer now preserves actual home/away fixture orientation, and the next step is adding richer features, calibration, and additional baseline models once more historical data is available. |
+| Model maturity | In progress | The team trainer now preserves actual home/away fixture orientation, and the Best XI selection is now position-aware (4-4-2). A fixture difficulty rating (FDR) endpoint surfaces upcoming opponent difficulty on a 1–5 scale with home advantage factored in. The next step is adding richer features, calibration, and additional baseline models once more historical data is available. |
 
 ## Delivery Log
 
@@ -47,13 +47,17 @@ This document is the working tracker for project planning, delivery status, and 
 | 2026-04-10 | Fixed team and player detail pages to reload on route changes | Prevented stale detail views when navigating between entities client-side. |
 | 2026-04-10 | Made historical fixture imports create seasons and gameweeks on demand | Enabled multi-season backfill instead of collapsing historical rows into the current season. |
 | 2026-04-11 | Added training actions and refresh to the model status page | Let the operator work the model slice directly from the model view. |
+| 2026-04-11 | Added position-aware Best XI selection (4-4-2) | Replaced unconstrained top-11 with a proper GK/DEF/MID/FWD squad composition. |
+| 2026-04-11 | Added fixture difficulty rating (FDR) endpoint and Picks page panel | Surfaces upcoming fixture difficulty (1–5 scale, home advantage factored in) through the API and alongside the top-picks view. |
+| 2026-04-11 | Added position filter to the Players browse page | Lets the operator narrow the player list by GK, DEF, MID, or FWD without a search term. |
 
 ## Near-Term Plan
 
-1. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
-2. Consider calibration and feature expansion once more historical team and player rows accumulate.
-3. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
-4. Add additional historical enrichments if more retrospective detail becomes available.
+1. Incorporate FDR scores into the recommendation scoring so picks favour players with easier upcoming fixtures.
+2. Expand provider depth further if API-Football or another source becomes viable for more detailed stats.
+3. Consider calibration and feature expansion once more historical team and player rows accumulate.
+4. Tighten any remaining operator workflow surfaces as the prototype stabilizes.
+5. Add additional historical enrichments if more retrospective detail becomes available.
 
 ## Update Rules
 

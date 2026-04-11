@@ -1,6 +1,7 @@
 @page "/picks"
 @rendermode InteractiveServer
 @inject FootballApiClient Api
+@using System.Globalization
 
 <PageTitle>Top Picks</PageTitle>
 
@@ -75,13 +76,65 @@
     </article>
 </div>
 
+<article class="panel mt-4">
+    <h3>Upcoming fixture difficulty</h3>
+    <div class="hero-copy mb-3">
+        Difficulty rating for each team's next fixture on a 1 (easiest) to 5 (hardest) scale. Home advantage is factored in.
+    </div>
+    @if (fixtureDifficulty is null)
+    {
+        <p>Loading...</p>
+    }
+    else if (fixtureDifficulty.Count == 0)
+    {
+        <p>No upcoming fixtures are available yet.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table table-dark table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Opponent</th>
+                        <th>H/A</th>
+                        <th>Kickoff</th>
+                        <th>FDR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in fixtureDifficulty)
+                    {
+                        <tr>
+                            <td>@row.TeamName</td>
+                            <td>@row.OpponentTeamName</td>
+                            <td>@(row.IsHome ? "H" : "A")</td>
+                            <td>@row.KickoffUtc.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)</td>
+                            <td><span class="badge @FdrBadgeClass(row.Difficulty)">@row.Difficulty</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</article>
+
 @code {
     private List<FantasyPickDto>? picks;
     private List<FantasyPickDto>? bestXi;
+    private List<FixtureDifficultyDto>? fixtureDifficulty;
 
     protected override async Task OnInitializedAsync()
     {
         picks = await Api.GetTopPicksAsync(10) ?? [];
         bestXi = await Api.GetBestXiAsync() ?? [];
+        fixtureDifficulty = await Api.GetFixtureDifficultyAsync() ?? [];
     }
+
+    private static string FdrBadgeClass(int difficulty) => difficulty switch
+    {
+        1 or 2 => "badge-good",
+        3 => "badge-neutral",
+        _ => "badge-bad"
+    };
 }
